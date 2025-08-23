@@ -1,0 +1,103 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+group = 'ar.tp'
+version = '1.0.0'
+
+application {
+    // AJUSTA si tu clase main está en otro paquete
+    mainClass = 'ar.tp.app.Run'
+}
+
+repositories { mavenCentral() }
+
+// --- Vars ---
+def isWin        = System.properties['os.name'].toLowerCase().contains('win')
+def byaccjExe    = isWin ? 'yacc.exe' : 'yacc'
+
+// generados van FUERA de src/, para no ensuciar el repo
+def genRoot      = file("$buildDir/generated/sources/main/java")
+def genParserDir = file("$genRoot/ar/tp/parser")
+
+// carpeta REAL de la gramática (sin espacios)
+def grammarDir   = file("src/main/resources/grammar")
+def grammarFile  = file("$grammarDir/gramatica.y")
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java', genRoot]
+        }
+        resources.srcDir 'src/main/resources'
+    }
+}
+
+/** 1) Verificar que la gramática existe */
+tasks.register('checkGrammar') {
+    doLast {
+        if (!grammarFile.exists()) {
+            throw new GradleException("No se encontró la gramática: ${grammarFile.absolutePath}")
+        }
+        println "Usando gramática: ${grammarFile.absolutePath}"
+    }
+}
+
+/** 2) Ejecutar BYACC/J DENTRO de la carpeta de la gramática */
+tasks.register('runYacc', Exec) {
+    dependsOn 'checkGrammar'
+    workingDir grammarDir
+    outputs.upToDateWhen { false }  // siempre ejecutar
+    doFirst {
+        println "WorkingDir: ${workingDir}"
+        println "Contenido de grammar/:"
+        grammarDir.listFiles()?.each { println " - ${it.name}" }
+    }
+    // ¡sin rutas! pasamos el nombre del archivo directamente
+    commandLine byaccjExe, '-Jclass=Parser', '-Jpackage=ar.tp.parser', 'gramatica.y'
+}
+
+/** 3) Mover Parser.java y ParserVal.java al directorio generado */
+tasks.register('stageParser', Copy) {
+    dependsOn 'runYacc'
+    from(grammarDir) {
+        include 'Parser.java', 'ParserVal.java'
+    }
+    into(genParserDir)
+    doFirst { genParserDir.mkdirs() }
+    doLast  { println "Parser staged en: ${genParserDir}" }
+}
+
+/** 4) Limpiar residuos de la carpeta de la gramática */
+tasks.register('cleanGrammar') {
+    dependsOn 'stageParser'
+    doLast {
+        ['Parser.java','ParserVal.java'].each { name ->
+            def f = new File(grammarDir, name)
+            if (f.exists()) f.delete()
+        }
+    }
+}
+
+/** 5) Compilar después de generar y mover */
+tasks.compileJava.dependsOn tasks.cleanGrammar
+
+tasks.clean.doLast {
+    delete genRoot
+}
+
+// Opción puntual para resources:
+tasks.named('processResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// (Opcional) global para cualquier Copy:
+tasks.withType(Copy).configureEach {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
