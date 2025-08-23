@@ -96,7 +96,7 @@ public class Lex {
         int trapState = -2;
         int finishState = -1;
 
-        int states[][] = {
+        int[][] states = {
                 //           L, D, /, *, +, -, =, <, >, :, ", @, (, ), ;, o , \t, \n, .
                 /* 0 */ {  1, 7,finishState,-2,finishState,finishState,-6, 6, 5, 8, 9, 1,finishState,finishState,finishState, 0, 0, 0, 0 },
                 /* 1 */ {  1,1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
