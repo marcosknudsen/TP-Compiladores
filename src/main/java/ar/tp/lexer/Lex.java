@@ -161,65 +161,26 @@ public class Lex {
                 } else if (currentChar == -1) {
                         value = 19;
                 } else
-                        switch ((char) currentChar) {
-                                case '.':
-                                        value = 20;
-                                        break;
-                                case '/':
-                                        value = 2;
-                                        break;
-                                case '*':
-                                        value = 3;
-                                        break;
-                                case '+':
-                                        value = 4;
-                                        break;
-                                case '-':
-                                        value = 5;
-                                        break;
-                                case '=':
-                                        value = 6;
-                                        break;
-                                case '<':
-                                        value = 7;
-                                        break;
-                                case '>':
-                                        value = 8;
-                                        break;
-                                case ':':
-                                        value = 9;
-                                        break;
-                                case '"':
-                                        value = 10;
-                                        break;
-                                case '@':
-                                        value = 11;
-                                        break;
-                                case '(':
-                                        value = 12;
-                                        break;
-                                case ')':
-                                        value = 13;
-                                        break;
-                                case ',':
-                                        value = 14;
-                                        break;
-                                case ';':
-                                        value = 15;
-                                        break;
-                                case ' ':
-                                case '\t':
-                                        value = 17;
-                                        break;
-                                case '\n':
-                                case '\r':
-                                        value = 18;
-                                        break;
-                                default:
-                                        value = 16;
-                                        break;
-
-                        }
+                    value = switch ((char) currentChar) {
+                        case '.' -> 20;
+                        case '/' -> 2;
+                        case '*' -> 3;
+                        case '+' -> 4;
+                        case '-' -> 5;
+                        case '=' -> 6;
+                        case '<' -> 7;
+                        case '>' -> 8;
+                        case ':' -> 9;
+                        case '"' -> 10;
+                        case '@' -> 11;
+                        case '(' -> 12;
+                        case ')' -> 13;
+                        case ',' -> 14;
+                        case ';' -> 15;
+                        case ' ', '\t' -> 17;
+                        case '\n', '\r' -> 18;
+                        default -> 16;
+                    };
                 return value;
         }
 }
