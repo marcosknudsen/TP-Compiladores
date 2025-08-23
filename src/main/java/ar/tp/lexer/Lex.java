@@ -12,7 +12,7 @@ public class Lex {
         Pointer pointer;
         public String yylval;
         public int line = 1;
-        private BufferedReader sourceCodeReader;
+        private final BufferedReader sourceCodeReader;
         private String string;
 
         public Lex(String filename) throws FileNotFoundException {
