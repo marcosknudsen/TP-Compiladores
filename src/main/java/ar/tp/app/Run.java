@@ -2,6 +2,8 @@ package ar.tp.app;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
+
 import ar.tp.lexer.Lex;
 
 public class Run {
@@ -42,7 +44,9 @@ public class Run {
         tokens.put(273, "longint");
         Token = lex.getToken();
         while (Token != -1) {
-            System.out.println(Token + ": " + tokens.get(Token));
+            if (Objects.equals(args[1], "1")){
+                System.out.println(Token + ": " + tokens.get(Token));
+            }
             Token = lex.getToken();
         }
     }
