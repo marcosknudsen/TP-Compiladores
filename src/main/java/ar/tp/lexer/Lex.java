@@ -98,15 +98,16 @@ public class Lex {
 
         int states[][] = {
                 //           L, D, /, *, +, -, =, <, >, :, ", @, (, ), ;, o , \t, \n, .
-                /* 0 */ {  1, 7,finishState,-2,finishState,finishState,-6, 6, 5, 8, 9, 1,finishState,finishState,finishState, trapState, 0, 0, finishState },
-                /* 1 */ {  1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
+                /* 0 */ {  1, 7,finishState,-2,finishState,finishState,-6, 6, 5, 8, 9, 1,finishState,finishState,finishState, 0, 0, 0, 0 },
+                /* 1 */ {  1,1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
                 /* 2 */ { finishState,finishState, 3,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 2 },
                 /* 3 */ {  3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 3, 3, 3 },
                 /* 4 */ {  3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 4, 4, 4 },
                 /* 5 */ { finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
                 /* 6 */ { finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 6 },
                 /* 7 */ { finishState, 7,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 7 },
-                /* 9 */ {  9, 9, 9, 9, 9, 9, 9, 9, 9, finishState, 9, 9, 9, 9, 9, 9, finishState, 9, 9 }
+                /* 8 */ {trapState,trapState,trapState,trapState,trapState,trapState,finishState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState},
+                /* 9 */ {  9, 9, 9, 9, 9, 9, 9, 9, 9, 9, finishState, 9, 9, 9, 9, 9, 9, 9, 9 }
         };
 
         SemanticAction[][] actions = {
@@ -119,8 +120,8 @@ public class Lex {
                 /* 5 */ {  greader,  greader,  greader,  greader,  greader,  greader,  greaderEqual, greader, greader, greader, greader,  greader,  greader,  greader,  greader,  greader,  greader,  greader,  finishGreader, greader, warningDot },
                 /* 6 */ {  lower,    lower,    lower,    lower,    lower,    lower,    lowerEqual, lower,   different, lower, lower,    lower,    lower,    lower,    lower,    lower,    lower,    lower,    finishLower,  lower,    warningDot }, 
                 /* 7 */ {  finishConstant, write, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstantNewLine, finishConstant, warningDot }, 
-                /* 8 */ {  none,     none,     none,     none,     none,     none,     assign,    none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     warningDot }, 
-                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, none,     warningDot }, 
+                /* 8 */ {  none,     none,     none,     none,     none,     none,     assign,    none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     warningDot },
+                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString,    write, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, none,     warningDot },
         };
 
         public int getToken() throws IOException {
