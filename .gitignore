@@ -2,3 +2,15 @@ eclipse-formatter.xml
 /bin
 /lib
 /.vscode
+/build/
+/out/
+/.gradle/
+/gradle/wrapper/gradle-wrapper.jar
+/.idea/
+/*.iml
+*.log
+*.class
+*.DS_Store
+Thumbs.db
+/tmp/
+/*.swp
