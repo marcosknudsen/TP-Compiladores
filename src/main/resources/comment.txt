@@ -1,0 +1,4 @@
+programa1
+begin
+    */ comentario /*
+end
