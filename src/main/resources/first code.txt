@@ -1,5 +1,6 @@
 programa1
 begin
+    uinteger @a@b;
 	longint a;
 	longint a;
 	longint b;

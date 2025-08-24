@@ -99,7 +99,7 @@ public class Lex {
         int[][] states = {
                 //           L, D, /, *, +, -, =, <, >, :, ", @, (, ), ;, o , \t, \n, .
                 /* 0 */ {  1, 7,finishState,-2,finishState,finishState,-6, 6, 5, 8, 9, 1,finishState,finishState,finishState, 0, 0, 0, 0 },
-                /* 1 */ {  1,1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
+                /* 1 */ {  1,1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,1,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
                 /* 2 */ { finishState,finishState, 3,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 2 },
                 /* 3 */ {  3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 3, 3, 3 },
                 /* 4 */ {  3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 4, 4, 4 },
@@ -134,7 +134,7 @@ public class Lex {
                         currentChar = sourceCodeReader.read();
                         charValue = decode(currentChar);
                         action = actions[currentState][charValue];
-                        pointer = action.ejecutar(sourceCodeReader, (Lex) this, currentChar, symbols, reservedWords);
+                        pointer = action.ejecutar(sourceCodeReader, this, currentChar, symbols, reservedWords);
                         currentState = states[currentState][charValue];
                         if (currentState == -2) {
                                 System.out.println("Error: line N°" + this.line);
