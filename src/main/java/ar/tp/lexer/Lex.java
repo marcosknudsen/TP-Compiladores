@@ -93,22 +93,19 @@ public class Lex {
 
         // ESTADO TRAMPA -2
 
-        int trapState = -2;
-        int finishState = -1;
-
-        int[][] states = {
-                //           L, D, /, *, +, -, =, <, >, :, ", @, (, ), ;, o , \t, \n, .
-                /* 0 */ {  1, 7,finishState,-2,finishState,finishState,-6, 6, 5, 8, 9, 1,finishState,finishState,finishState, 0, 0, 0, 0 },
-                /* 1 */ {  1,1,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,1,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
-                /* 2 */ { finishState,finishState, 3,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 2 },
-                /* 3 */ {  3, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 3, 3, 3 },
-                /* 4 */ {  3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, trapState, 4, 4, 4 },
-                /* 5 */ { finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, finishState },
-                /* 6 */ { finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 6 },
-                /* 7 */ { finishState, 7,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState,finishState, finishState, finishState, finishState, 7 },
-                /* 8 */ {trapState,trapState,trapState,trapState,trapState,trapState,finishState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState,trapState},
-                /* 9 */ {  9, 9, 9, 9, 9, 9, 9, 9, 9, 9, finishState, 9, 9, 9, 9, 9, 9, 9, 9 }
-        };
+    int[][] states = {
+            //           L, D, /, *, +, -, =, <, >, :, ", @, (, ), ;, o , \t, \n, .
+            /* 0 */ {  1,  7, -1, -2, -1, -1, -6,  6,  5,  8,  9,  1, -1, -1, -1,  0,  0,  0,  0 },
+            /* 1 */ {  1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1, -1 },
+            /* 2 */ { -1, -1,  3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2 },
+            /* 3 */ {  3,  3,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  3,  3,  3 },
+            /* 4 */ {  3,  3,  0,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  4,  4,  4 },
+            /* 5 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+            /* 6 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  6 },
+            /* 7 */ { -1,  7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7 },
+            /* 8 */ { -2, -2, -2, -2, -2, -2, -1, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2 },
+            /* 9 */ {  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, -1,  9,  9,  9,  9,  9,  9,  9,  9 }
+    };
 
         SemanticAction[][] actions = {
                 //   L         D         /         *         +         -         =         <         >         :         "         @         (         )         ,         ;         otro      bl/tab    nl        eof       .
