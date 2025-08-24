@@ -1,4 +1,5 @@
 programa1
 begin
     */ comentario /*
+    uinteger a;
 end

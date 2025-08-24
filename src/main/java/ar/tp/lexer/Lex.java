@@ -96,23 +96,23 @@ public class Lex {
 
     int[][] states = {
             //         L,  D,  /,  *,  +,  -,  =,  <,  >,  :,  ",  @,  (,  ),  ;, o , \t, \n, .
-            /* 0 */ {  1,  7, -1, -2, -1, -1, -6,  6,  5,  8,  9,  1, -1, -1, -1,  0,  0,  0,  0 },
-            /* 1 */ {  1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1, -1 },
-            /* 2 */ { -1, -1,  3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2 },
-            /* 3 */ {  3,  3,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  3,  3,  3 },
-            /* 4 */ {  3,  3,  0,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  4,  4,  4 },
-            /* 5 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-            /* 6 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  6 },
-            /* 7 */ { -1,  7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7 },
-            /* 8 */ { -2, -2, -2, -2, -2, -2, -1, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2 },
-            /* 9 */ {  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, -1,  9,  9,  9,  9,  9,  9,  9,  9 }
+            /* 0 */ {  1,  7, -1,  2, -1, -1, -6,  6,  5,  8,  9,  1, -1, -1, -1,  0,  0,  0,  0, -1 },
+            /* 1 */ {  1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1, -1, -1 },
+            /* 2 */ { -1, -1,  3,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+            /* 3 */ {  3,  3,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  3,  3,  3, -1 },
+            /* 4 */ {  3,  3,  3,  0,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  4,  4,  4, -1 },
+            /* 5 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+            /* 6 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  6, -1 },
+            /* 7 */ { -1,  7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7, -1 },
+            /* 8 */ { -2, -2, -2, -2, -2, -2, -1, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -1 },
+            /* 9 */ {  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, -1,  9,  9,  9,  9,  9,  9,  9,  9, -1 }
     };
 
         SemanticAction[][] actions = {
-                //   L         D         /         *         +         -         =         <         >         :         "         @         (         )         ,         ;         otro      bl/tab    nl        eof       .
-                /* 0 */ {  start,    start,    literal,  none,     literal,  literal,  literal,  none,     none,     none,     startString, start,    literal,  literal,  literal,  literal,  null,     none,     newLine,  none,     warningDot }, 
+                //           L         D         /         *         +         -         =         <         >         :         "         @         (         )         ,         ;         otro      bl/tab    nl        eof       .
+                /* 0 */ {  start,    literal,  literal,   none,     literal,  literal,  literal,  none,     none,     none,     startString, start,    literal,  literal,  literal,  literal,  null,     none,     newLine,  none,     warningDot },
                 /* 1 */ {  write,    write,    finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId,   write,    finishId, finishId, finishId, finishId, finishId, finishId, finishIdNewLine, finishId, warningDot },
-                /* 2 */ {  asterisk, asterisk, none,     asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, finishAsterisk, asterisk, warningDot }, 
+                /* 2 */ {  asterisk, asterisk,     none,     asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, finishAsterisk, asterisk, warningDot },
                 /* 3 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot }, 
                 /* 4 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot }, 
                 /* 5 */ {  greader,  greader,  greader,  greader,  greader,  greader,  greaderEqual, greader, greader, greader, greader,  greader,  greader,  greader,  greader,  greader,  greader,  greader,  finishGreader, greader, warningDot },
