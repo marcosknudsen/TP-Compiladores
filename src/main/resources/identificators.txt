@@ -1,0 +1,6 @@
+programa1
+begin
+    uinteger @a@b;
+
+    @a@b := 2;
+end
