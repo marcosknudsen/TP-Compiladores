@@ -96,8 +96,8 @@ public class Lex {
         // RETURN TOKEN = -1
 
     int[][] states = {
-            //         L,  D,  /,  *,  +,  -,  =,  <,  >,  :,  ",  @,  (,  ),  ;,  o, \t, \n, .
-            /* 0 */ {  1,  7, -1,  2, -1, -1, -1,  6,  5,  8,  9,  1, -1, -1, -1,  0,  -1,  0,  0, -1 },
+            //         L,  D,  /,  *,  +,  -,  =,  <,  >,  :,  ",  @,  (,  ),  ;,  o, \t, \n, eof   .
+            /* 0 */ {  1,  7, -1,  2, -1, -1, -1,  6,  5,  8,  9,  1, -1, -1, -1,  0,  -1, 0, 0, -1 },
             /* 1 */ {  1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  1, -1, -1, -1, -1, -1, -1, -1, -1 },
             /* 2 */ { -1, -1,  3,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
             /* 3 */ {  3,  3,  4,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3, -2,  3,  3,  3, -1 },
@@ -114,7 +114,7 @@ public class Lex {
                 /* 0 */ {  start,    start,  literal,   none,     literal,  literal,  literal,  none,     none,     none,     startString, write,    literal,  literal,  literal,  literal,  null,     none,     newLine,  none,     warningDot },
                 /* 1 */ {  write,    write,    finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId,   write,    finishId, finishId, finishId, finishId, finishId, finishId, finishIdNewLine, finishId, warningDot },
                 /* 2 */ {  asterisk, asterisk,     none,     asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, finishAsterisk, asterisk, warningDot },
-                /* 3 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot }, 
+                /* 3 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot },
                 /* 4 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot }, 
                 /* 5 */ {  greader,  greader,  greader,  greader,  greader,  greader,  greaderEqual, greader, greader, greader, greader,  greader,  greader,  greader,  greader,  greader,  greader,  greader,  finishGreader, greader, warningDot },
                 /* 6 */ {  lower,    lower,    lower,    lower,    lower,    lower,    lowerEqual, lower,   different, lower, lower,    lower,    lower,    lower,    lower,    lower,    lower,    lower,    finishLower,  lower,    warningDot }, 
