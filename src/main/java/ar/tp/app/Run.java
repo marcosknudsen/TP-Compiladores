@@ -44,7 +44,7 @@ public class Run {
         tokens.put(273, "longint");
         Token = lex.getToken();
         while (Token != -1) {
-            if (Objects.equals(args[1], "1")){
+            if (args.length == 2 && Objects.equals(args[1], "1")){
                 System.out.println(Token + ": " + tokens.get(Token));
             }
             Token = lex.getToken();
