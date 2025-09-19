@@ -14,8 +14,8 @@ public class FinishId extends SemanticAction {
             HashMap<String, Symbol> symbols, HashMap<String, Integer> reservedWords) throws IOException {
         String cad = lex.getString();
         if (cad.length() > 25) {// recorto cad a 25 c,
+            System.out.println(String.format("The string %s is shortened to 25 characters: %s",cad, cad.substring(0, 25)));
             cad = cad.substring(0, 25);
-            System.out.println("The string is shortened to 25 characters");
         }
         
         Symbol value = symbols.get(cad);
