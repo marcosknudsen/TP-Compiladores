@@ -119,7 +119,7 @@ public class Lex {
                 /* 6 */ {  lower,    lower,    lower,    lower,    lower,    lower,    lowerEqual, lower,   different, lower, lower,    lower,    lower,    lower,    lower,    lower,    lower,    lower,    finishLower,  lower,    warningDot }, 
                 /* 7 */ {  finishConstant, write, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstantNewLine, finishConstant, warningDot }, 
                 /* 8 */ {  none,     none,     none,     none,     none,     none,     assign,    none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     warningDot },
-                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString,    write, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, none,     warningDot },
+                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, none,     warningDot },
         };
 
         public int getToken() throws IOException {
