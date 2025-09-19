@@ -63,6 +63,7 @@ public class Lex {
         SemanticAction lowerEqual = new LowerEqual();
         SemanticAction different = new Different();
         SemanticAction warningStringNewLine = new WarningStringNL();
+        SemanticAction warningStringNotClosed = new WarningStringNotClosed();
         SemanticAction finishString = new FinishString();
         SemanticAction finishConstant = new FinishConstant();
         SemanticAction finishConstantNewLine = new FinishConstantNewLine();
@@ -105,7 +106,7 @@ public class Lex {
             /* 6 */ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  6, -1 },
             /* 7 */ { -1,  7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  7, -1 },
             /* 8 */ { -2, -2, -2, -2, -2, -2, -1, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -1 },
-            /* 9 */ {  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, -1,  9,  9,  9,  9,  9,  9,  9,  9, -1 }
+            /* 9 */ {  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, -1,  9,  9,  9,  9,  9,  9,  9,  -1, -1 }
     };
 
         SemanticAction[][] actions = {
@@ -119,7 +120,7 @@ public class Lex {
                 /* 6 */ {  lower,    lower,    lower,    lower,    lower,    lower,    lowerEqual, lower,   different, lower, lower,    lower,    lower,    lower,    lower,    lower,    lower,    lower,    finishLower,  lower,    warningDot }, 
                 /* 7 */ {  finishConstant, write, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstantNewLine, finishConstant, warningDot }, 
                 /* 8 */ {  none,     none,     none,     none,     none,     none,     assign,    none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     warningDot },
-                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, none,     warningDot },
+                /* 8 */ {  write,    write,    write,    write,    write,    write,    write,    write,    write,    write,    finishString, write,   write,    write,    write,    write,    write,    write,    warningStringNewLine, warningStringNotClosed,     warningDot },
         };
 
         public int getToken() throws IOException {
