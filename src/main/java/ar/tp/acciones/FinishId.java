@@ -19,7 +19,7 @@ public class FinishId extends SemanticAction {
         }
         
         Symbol value = symbols.get(cad);
-        int Token = reservedWords.getOrDefault(cad, -1);
+        int Token = reservedWords.getOrDefault(cad.toLowerCase(), -1);
         lex.yylval = lex.getString();
         
         if (Token == -1) {// Si no es PR reescribe el token
