@@ -12,7 +12,7 @@ public abstract class SemanticAction {
     public abstract Pointer ejecutar(
             BufferedReader sourceCode,
             Lex lex,
-            int currectChar,
+            int currentChar,
             HashMap<String, Symbol> symbols,
             HashMap<String, Integer> reservedWords
     ) throws IOException;
