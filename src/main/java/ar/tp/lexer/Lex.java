@@ -71,6 +71,7 @@ public class Lex {
         SemanticAction finishGreader = new FinishGreader();
         SemanticAction assign = new Assign();
         SemanticAction warningDot = new WarningDot();
+        SemanticAction warningCommentNotClosed = new WarningCommentNotClosed();
 
         // L 1
         // D 2
@@ -115,7 +116,7 @@ public class Lex {
                 /* 1 */ {  write,    write,    finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId, finishId,   write,    finishId, finishId, finishId, finishId, finishId, finishId, finishIdNewLine, finishId, warningDot },
                 /* 2 */ {  asterisk, asterisk,     none,     asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, asterisk, finishAsterisk, asterisk, warningDot },
                 /* 3 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot },
-                /* 4 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  none,     warningDot }, 
+                /* 4 */ {  none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     none,     newLine,  warningCommentNotClosed,     warningDot },
                 /* 5 */ {  greader,  greader,  greader,  greader,  greader,  greader,  greaderEqual, greader, greader, greader, greader,  greader,  greader,  greader,  greader,  greader,  greader,  greader,  finishGreader, greader, warningDot },
                 /* 6 */ {  lower,    lower,    lower,    lower,    lower,    lower,    lowerEqual, lower,   different, lower, lower,    lower,    lower,    lower,    lower,    lower,    lower,    lower,    finishLower,  lower,    warningDot }, 
                 /* 7 */ {  finishConstant, write, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstant, finishConstantNewLine, finishConstant, warningDot }, 
