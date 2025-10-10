@@ -1,0 +1,2 @@
+print(1);  */ esto es
+un comentario /*  print(2);

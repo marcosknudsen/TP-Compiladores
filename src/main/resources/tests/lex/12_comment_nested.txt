@@ -1,0 +1,2 @@
+*/ c1 */ adentro /* c2 /* afuera /*
+print(4);

@@ -1,0 +1,11 @@
+begin
+  uinteger fun f1(uinteger x)
+  begin
+     print("ok");
+     x := 10;
+     while do
+     begin
+        x := x + 1;
+     end
+  end
+end

@@ -1,0 +1,7 @@
+begin
+  longint fun F2( uinteger )  /* falta ID del parámetro */
+  begin
+     print("unterminated);
+     y := 2147483648;  /* fuera de rango longint */
+  end
+end
