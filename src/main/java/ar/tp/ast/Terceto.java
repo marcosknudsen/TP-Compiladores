@@ -4,34 +4,35 @@ import java.util.ArrayList;
 import ar.tp.parser.*;
 
 public class Terceto {
-    String operand;
-    public ar.tp.parser.ParserVal a, b;
-    ArrayList<String> errors;
+    public String operand;
+    public ParserVal a, b;
+    public String tipo;
+    public ArrayList<String> errors;
 
     public Terceto(String operand, ParserVal a, ParserVal b) {
-        this.operand = operand;
-        this.a = a;
-        this.b = b;
-        this.errors = new ArrayList<String>();
+        this(operand, a, b, null, new ArrayList<>());
     }
 
     public Terceto(String operand, ParserVal a, ParserVal b, ArrayList<String> errors) {
+        this(operand, a, b, null, errors == null ? new ArrayList<>() : errors);
+    }
+
+    public Terceto(String operand, ParserVal a, ParserVal b, String tipo, ArrayList<String> errors) {
         this.operand = operand;
         this.a = a;
         this.b = b;
-        this.errors = errors;
+        this.tipo = tipo;
+        this.errors = errors == null ? new ArrayList<>() : errors;
     }
 
     public String showable(ParserVal a) {
-        if (a.sval == null) {
-            return String.valueOf(a.ival);
-        }
+        if (a.sval == null) return String.valueOf(a.ival);
         return a.sval;
     }
 
     @Override
     public String toString() {
-        return this.operand + " " + showable(this.a) + " " + showable(this.b) + " "
-                + String.valueOf(this.errors.size() > 0);
+        return operand + " " + showable(a) + " " + showable(b)
+                + " " + (errors.size() > 0) + (tipo != null ? (" : " + tipo) : "");
     }
 }
