@@ -7,6 +7,7 @@
     import ar.tp.lexer.Lex;
     import ar.tp.ast.*;
     import ar.tp.acciones.*;
+    import ar.tp.parser.*;
 %}
 
 %token IF THEN ID ASSIGN ELSE BEGIN END END_IF PRINT WHILE DO FUN RETURN CTE CADENA UINTEGER LONGINT MAYOR_IGUAL MENOR_IGUAL DISTINTO
@@ -256,31 +257,23 @@ ar.tp.parser.ParserVal PV;
 int pointer;
 Terceto t;
 
-public static void main(String[] args) throws FileNotFoundException{
-    colaAmbito.add("m:");
-    System.out.println("Iniciando compilacion...");
-    lex=new Lex(args[0]);
-    par=new Parser(false);
-    par.run();
-    System.out.println("Fin compilacion");
-    System.out.println();
-    System.out.println("Lista de Reglas");
-    mostrarReglas(reglas);
-    System.out.println();
-    System.out.println("Tabla de Simbolos");
-    mostrarTS();
+public int runParser() {
+    return yyparse();
 }
 
+public static void setLexer(Lex l) {
+     lex = l; 
+}
 
-int yylex(){
-    int token;
-    try {
-      token = lex.getToken();
-      yylval=new ar.tp.parser.ParserVal(lex.yylval);
-    } catch (IOException e) {
-      token=-1;
-    }
-    return token;
+int yylex() {
+  int token;
+  try {
+    token = lex.getToken();
+    yylval = new ar.tp.parser.ParserVal(lex.yylval);
+  } catch (IOException e) {
+    token = -1;
+  }
+  return token;
 }
 
 void yyerror(String s){
