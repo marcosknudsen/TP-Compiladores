@@ -30,21 +30,13 @@ bloquewhile: beginwhile ss END
 bloquefunct: beginfunct ss END
 ;
 
-beginfunct: BEGIN {$$=new ar.tp.parser.ParserVal(crear_terceto("begfunct",new ar.tp.parser.ParserVal("-"),new ar.tp.parser.ParserVal("-")));pila.push(reglas.size());}
+beginfunct: BEGIN
 ;
 
-beginwhile: BEGIN {pila.push(reglas.size());}
+beginwhile: BEGIN
 ;
 
-bloquethen: BEGIN ss END {
-    pointer=pila.pop();
-    Terceto t = reglas.get(pointer);
-    PV = new ar.tp.parser.ParserVal(
-      crear_terceto("BI",new ar.tp.parser.ParserVal("-"),new ar.tp.parser.ParserVal("-"))
-    );
-    t.b = new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pointer, t);
-    pila.push(reglas.size()-1);$$=PV;}
+bloquethen: BEGIN ss END
 ;
 
 ss: ss s
@@ -55,173 +47,88 @@ s: declaracion
     | se
 ;
 
-se:seleccion ';' {pointer=pila.pop();
-    Terceto t = reglas.get(pointer);
-    t.b = new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pointer, t);}
+se:seleccion ';'
     | iteracion';'
     | retorno ';'
     | asignacion ';'
     | print ';'
-    | error ';' {System.out.println("ERROR on line "+lex.line+" sentencia invalida");}
+    | error ';'
 ;
 
-iteracion: DO bloquewhile WHILE condicionwhile {    
-    crear_terceto(
-      "BF",
-      new ar.tp.parser.ParserVal("[" + (reglas.size() - 1) + "]"),
-      new ar.tp.parser.ParserVal("-")
-    );
-    pila.push(reglas.size());
-    crear_terceto(
-      "BI",
-      new ar.tp.parser.ParserVal("-"),
-      new ar.tp.parser.ParserVal("-")
-    );
-    t=reglas.get(pila.peek()-1);
-    t.b=new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pila.pop()-1,t);
-    t=reglas.get(reglas.size()-1);
-    t.b=new ar.tp.parser.ParserVal("["+pila.pop()+"]");
-    }
-    | bloquewhile WHILE condicionwhile {System.out.println("ERROR on line "+lex.line+" 'do' expected");}
+iteracion: DO bloquewhile WHILE condicionwhile
+    | bloquewhile WHILE condicionwhile
 ;
 
 seleccion: IF condicionif THEN bloquethen END_IF
     | IF condicionif THEN bloquethen ELSE bloqueejecutable END_IF
-    | IF '(' condicion THEN bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": ')' expected");}
-    | IF condicion ')' THEN bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": '(' expected");}
-    | IF condicionif bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": 'then' expected");}
-    | IF condicionif THEN bloquethen ELSE bloqueejecutable {System.out.println("ERROR on line "+lex.line+": 'end_if' expected");}
+    | IF '(' condicion THEN bloquethen ELSE bloqueejecutable END_IF
+    | IF condicion ')' THEN bloquethen ELSE bloqueejecutable END_IF
+    | IF condicionif bloquethen ELSE bloqueejecutable END_IF
+    | IF condicionif THEN bloquethen ELSE bloqueejecutable
 ;
 
-condicionif: '(' condicion ')' {ar.tp.parser.ParserVal PV = new ar.tp.parser.ParserVal(crear_terceto("BF",new ar.tp.parser.ParserVal("["+(reglas.size()-1)+"]"),new ar.tp.parser.ParserVal("-")));pila.push(reglas.size()-1);$$=PV;}
+condicionif: '(' condicion ')'
 ;
 
 condicionwhile: '(' condicion ')'
 ;
 
-condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto(">",$1,$3));}
-        | expresion '<' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto("<",$1,$3));}
-        | expresion '=' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto("=",$1,$3));}
-        | expresion MAYOR_IGUAL expresion {$$=new ar.tp.parser.ParserVal(crear_terceto(">=",$1,$3));}
-        | expresion MENOR_IGUAL expresion {$$=new ar.tp.parser.ParserVal(crear_terceto("<=",$1,$3));}
-        | expresion DISTINTO expresion {$$=new ar.tp.parser.ParserVal(crear_terceto("<>",$1,$3));}
-        | expresion '>' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
-        | expresion '<' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
-        | expresion '=' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
-        | expresion MAYOR_IGUAL {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
-        | expresion MENOR_IGUAL {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
-        | expresion DISTINTO {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
+condicion: expresion '>' expresion
+        | expresion '<' expresion
+        | expresion '=' expresion
+        | expresion MAYOR_IGUAL expresion
+        | expresion MENOR_IGUAL expresion
+        | expresion DISTINTO expresion
+        | expresion '>'
+        | expresion '<'
+        | expresion '='
+        | expresion MAYOR_IGUAL
+        | expresion MENOR_IGUAL
+        | expresion DISTINTO
 ;
 
-parametro: tipodato ID {guardarVariable($2.sval,new Symbol($1.sval,"parametro"));$$=$2;pilaString.push($1.sval);}
-    | ID {System.out.println("ERROR on line "+lex.line+": datatype expected");}
-    | tipodato {System.out.println("ERROR on line "+lex.line+": identifier expected");}
+parametro: tipodato ID
+    | ID
+    | tipodato
 ;
 
-retorno: RETURN '('expresion')' {$$=new ar.tp.parser.ParserVal(crear_terceto("ret",$3,new ar.tp.parser.ParserVal("-")));}
-    | RETURN '(' expresion {System.out.println("ERROR on line "+lex.line+": ')' expected");}
-    | RETURN expresion ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
+retorno: RETURN '('expresion')'
+    | RETURN '(' expresion
+    | RETURN expresion ')'
 ;
 
-asignacion: ID ASSIGN expresion {$$=new ar.tp.parser.ParserVal(crear_terceto(":=",$1,$3));}
-    | ID ASSIGN {System.out.println("ERROR on line "+lex.line+": expresion expected");}
-    | ASSIGN expresion {System.out.println("ERROR on line "+lex.line+": identifier expected");}
+asignacion: ID ASSIGN expresion
+    | ID ASSIGN
+    | ASSIGN expresion
 ;
 
 print: PRINT '(' CADENA ')'
-    | PRINT CADENA ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
-    | PRINT '(' CADENA {System.out.println("ERROR on line "+lex.line+": ')' expected");}
-    | PRINT '(' ')' {System.out.println("ERROR on line "+lex.line+": String expected");}
+    | PRINT CADENA ')'
+    | PRINT '(' CADENA
+    | PRINT '(' ')'
 ;
 
-declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
-        ArrayList<String> errores=new ArrayList<String>();
-        if(buscarVariable($3.sval)!=null)
-            errores.add("declared");
-        tiposParFunct.put($3.sval,pilaString.pop());
-        $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
-        t=reglas.get(pila.peek()-1);
-        t.a=$3;
-        t.b=$5;
-        reglas.set(pila.pop()-1,t);
-        colaAmbito.remove(colaAmbito.size()-1);
-        if (!errores.contains("declared")){
-            guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-        };
-    }
-    | tipodato FUN identificadorfunct'('')' bloquefunct {
-        ArrayList<String> errores=new ArrayList<String>();
-        if(buscarVariable($3.sval)!=null)
-            errores.add("declared");
-        if(pilaString.pop().compareTo($1.sval)!=0)
-            errores.add("typeNotMatch");
-        $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
-        t=reglas.get(pila.peek()-1);
-        t.a=new ar.tp.parser.ParserVal($3.sval);
-        reglas.set(pila.pop()-1,t);
-        colaAmbito.remove(colaAmbito.size()-1);
-        if (!errores.contains("declared")){
-            guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-        };
-    }
-    | tipodato listavariables ';' {
-        for (int i=0; i<variables.size(); i++) {
-            ArrayList<String> errores=new ArrayList<String>();
-            if(buscarVariable($3.sval)!=null)
-                errores.add("declared");
-            crear_terceto("decl",$1,new ar.tp.parser.ParserVal(variables.get(i)),errores);
-            guardarVariable(variables.get(i),new Symbol($1.sval,"Var"));
-        }
-        variables.clear();
-    }
+declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct
+    | tipodato FUN identificadorfunct'('')' bloquefunct
+    | tipodato listavariables ';'
 ;
 
-identificadorfunct: ID {colaAmbito.add($1.sval+":");}
+identificadorfunct: ID
 ;
 
 
-tipodato: UINTEGER  {$$=$1;}
-    | LONGINT  {$$=$1;}
+tipodato: UINTEGER
+    | LONGINT
 ;
 
 expresion : termino
-    | expresion '+' termino {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("+", $1, $3, errores));
-      }
-    | expresion '-' termino {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("-", $1, $3, errores));
-      }
+    | expresion '+' termino
+    | expresion '-' termino
 ;
 
 termino  : factor
-    | termino '*' factor {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("*", $1, $3, errores));
-      }
-    | termino '/' factor {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("/", $1, $3, errores));
-      }
+    | termino '*' factor
+    | termino '/' factor
 ;
 
 factor:ID
@@ -232,19 +139,12 @@ factor:ID
     |invocacion
 ;
 
-listavariables: ID ',' listavariables {variables.add($1.sval);}
-    | ID {variables.add($1.sval);}
+listavariables: ID ',' listavariables
+    | ID
 ;
 
-invocacion: ID '('')' {$$=new ar.tp.parser.ParserVal(crear_terceto("exec",$1,new ar.tp.parser.ParserVal("-")));pilaString.push(buscarVariable($1.sval).tipo);}
-    | ID '('expresion')' {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (lex.symbols.get($3.sval).uso!="Constante"){
-            if (buscarVariable($3.sval).tipo.compareTo(tiposParFunct.get($1.sval))!=0){
-                errores.add("type missmatch");
-            }
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("exec",$1,$3));}
+invocacion: ID '('')'
+    | ID '('expresion')'
 ;
 %%
 
