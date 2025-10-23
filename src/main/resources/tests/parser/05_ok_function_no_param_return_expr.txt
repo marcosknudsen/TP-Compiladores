@@ -1,0 +1,8 @@
+main
+begin
+uinteger fun f1 () begin
+  uinteger a;
+  a := 1 + 2 * 3;
+  return(a);
+end;
+end

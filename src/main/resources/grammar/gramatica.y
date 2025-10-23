@@ -186,34 +186,42 @@ tipodato: UINTEGER  {$$=$1;}
     | LONGINT  {$$=$1;}
 ;
 
-expresion: termino
+expresion : termino
     | expresion '+' termino {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (buscarVariable($1.sval).tipo!=buscarVariable($3.sval).tipo){
-            errores.add("datatype missmatch");    
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("+",$1,$3,errores));}
+        ArrayList<String> errores = new ArrayList<>();
+        String t1 = tipoDe($1);
+        String t3 = tipoDe($3);
+        if (t1 != null && t3 != null && !t1.equals(t3))
+            errores.add("datatype missmatch");
+        $$ = new ar.tp.parser.ParserVal(crear_terceto("+", $1, $3, errores));
+      }
     | expresion '-' termino {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (buscarVariable($1.sval).tipo!=buscarVariable($3.sval).tipo){
-            errores.add("datatype missmatch");    
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("-",$1,$3,errores));}
+        ArrayList<String> errores = new ArrayList<>();
+        String t1 = tipoDe($1);
+        String t3 = tipoDe($3);
+        if (t1 != null && t3 != null && !t1.equals(t3))
+            errores.add("datatype missmatch");
+        $$ = new ar.tp.parser.ParserVal(crear_terceto("-", $1, $3, errores));
+      }
 ;
 
-termino: factor
+termino  : factor
     | termino '*' factor {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (buscarVariable($1.sval).tipo!=buscarVariable($3.sval).tipo){
-            errores.add("datatype missmatch");    
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("*",$1,$3,errores));}
+        ArrayList<String> errores = new ArrayList<>();
+        String t1 = tipoDe($1);
+        String t3 = tipoDe($3);
+        if (t1 != null && t3 != null && !t1.equals(t3))
+            errores.add("datatype missmatch");
+        $$ = new ar.tp.parser.ParserVal(crear_terceto("*", $1, $3, errores));
+      }
     | termino '/' factor {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (buscarVariable($1.sval).tipo!=buscarVariable($3.sval).tipo){
-            errores.add("datatype missmatch");    
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("/",$1,$3,errores));}
+        ArrayList<String> errores = new ArrayList<>();
+        String t1 = tipoDe($1);
+        String t3 = tipoDe($3);
+        if (t1 != null && t3 != null && !t1.equals(t3))
+            errores.add("datatype missmatch");
+        $$ = new ar.tp.parser.ParserVal(crear_terceto("/", $1, $3, errores));
+      }
 ;
 
 factor:ID
@@ -336,6 +344,34 @@ Symbol buscarVariable(String nombre){
     System.out.print(nombre);
     return nombre;
 } */
+
+// Devuelve "uinteger", "longint" o null si no puede determinarlo
+String tipoDe(ar.tp.parser.ParserVal v) {
+    if (v == null || v.sval == null) return null;
+
+    String s = v.sval;
+
+    // ¿Es un terceto? "[n]"
+    if (s.length() >= 3 && s.charAt(0) == '[' && s.charAt(s.length()-1) == ']') {
+        // Si guardás tipo en el terceto, úsalo:
+        try {
+            int idx = decode(s);              // tu helper para convertir "[n]" -> n
+            Terceto tt = reglas.get(idx);
+            return tt.tipo;                   // si aún no llevás tipos, retorna null
+        } catch (Exception e) { return null; }
+    }
+
+    // ¿Es constante de la TS?
+    Symbol sc = lex.symbols.get(s);
+    if (sc != null) return sc.tipo;
+
+    // ¿Es variable (con manejo de ámbitos)?
+    Symbol sv = buscarVariable(s);
+    if (sv != null) return sv.tipo;
+
+    return null;
+}
+
 
 static String getVariableName(String nombre,int n){
     String sufijo="";

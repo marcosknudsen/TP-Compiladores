@@ -1,0 +1,6 @@
+main
+begin
+uinteger a, b, c, d;
+a := b + c * d;
+a := a - b / c + d;
+end

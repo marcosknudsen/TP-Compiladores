@@ -1,0 +1,6 @@
+main
+begin
+uinteger a, b, c;
+longint x;
+uinteger m, n;
+end

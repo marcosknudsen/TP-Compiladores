@@ -1,0 +1,5 @@
+main
+begin
+print("hola mundo");
+print("a123456789012345678901");
+end
