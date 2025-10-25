@@ -1,0 +1,6 @@
+main
+begin
+uinteger a;
+a := 1 + 2;    */ esto es un comentario /*
+print("ok");
+end
