@@ -3,10 +3,12 @@
 ## Cargar Parser
 
 ```cmd
-yacc -Jpackage=parser {.y file}
+yacc -Jpackage=ar.tp.parser {.y file}
 ```
 
 ## Compilar Proyecto
+
+.\gradlew run --args {.txt file}
 
 ## Crear  Analizador Lexicográfico
 

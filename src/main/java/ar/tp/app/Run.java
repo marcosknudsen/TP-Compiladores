@@ -12,7 +12,7 @@ public class Run {
 
         Parser.setLexer(new Lex(args[0]));
 
-        Parser p = new Parser(false);    // false = sin trazas del parser
+        Parser p = new Parser(true);    // false = sin trazas del parser
         int rc = p.runParser();            // o p.run() si tu clase lo expone
         System.out.println(rc == 0 ? "Parse OK" : "Parse con errores");
     }

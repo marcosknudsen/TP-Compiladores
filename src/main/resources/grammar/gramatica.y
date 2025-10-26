@@ -19,6 +19,7 @@ programa:ID bloque
 ;
 
 bloque: BEGIN ss END
+    | BEGIN END
 ;
 
 bloqueejecutable: BEGIN ss END
@@ -30,21 +31,36 @@ bloquewhile: beginwhile ss END
 bloquefunct: beginfunct ss END
 ;
 
-beginfunct: BEGIN {$$=new ar.tp.parser.ParserVal(crear_terceto("begfunct",new ar.tp.parser.ParserVal("-"),new ar.tp.parser.ParserVal("-")));pila.push(reglas.size());}
+beginfunct: BEGIN {
+
+    $$ = new ar.tp.parser.ParserVal(
+        crear_terceto(
+            "begfunct",
+            new ar.tp.parser.ParserVal("-"),
+            new ar.tp.parser.ParserVal("-")
+        )
+    );
+
+    pila.push(reglas.size());
+    }
 ;
 
 beginwhile: BEGIN {pila.push(reglas.size());}
 ;
 
 bloquethen: BEGIN ss END {
-    pointer=pila.pop();
-    Terceto t = reglas.get(pointer);
-    PV = new ar.tp.parser.ParserVal(
-      crear_terceto("BI",new ar.tp.parser.ParserVal("-"),new ar.tp.parser.ParserVal("-"))
-    );
-    t.b = new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pointer, t);
-    pila.push(reglas.size()-1);$$=PV;}
+    // Cerramos el BF de la condición apuntando al “después del THEN” (salto a ELSE)
+    int posBF = pila.pop();
+    Terceto tBF = reglas.get(posBF);
+    // Creamos BI para saltar al final del IF (después del ELSE)
+    ParserVal pvBI = new ParserVal( crear_terceto("BI", new ParserVal("-"), new ParserVal("-")) );
+
+    tBF.b = new ParserVal(reglas.size());  // destino del BF: inicio del bloque ELSE
+    reglas.set(posBF, tBF);
+
+    pila.push(reglas.size()-1);  // guardo pos(BI) para backpatch cuando termine ELSE
+    $$ = pvBI;
+}
 ;
 
 ss: ss s
@@ -55,10 +71,12 @@ s: declaracion
     | se
 ;
 
-se:seleccion ';' {pointer=pila.pop();
-    Terceto t = reglas.get(pointer);
-    t.b = new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pointer, t);}
+se:seleccion ';' {
+         int posBI = pila.pop();
+         Terceto tBI = reglas.get(posBI);
+         tBI.b = new ParserVal(reglas.size());  // fin de todo el IF
+         reglas.set(posBI, tBI);
+     }
     | iteracion';'
     | retorno ';'
     | asignacion ';'
@@ -66,24 +84,18 @@ se:seleccion ';' {pointer=pila.pop();
     | error ';' {System.out.println("ERROR on line "+lex.line+" sentencia invalida");}
 ;
 
-iteracion: DO bloquewhile WHILE condicionwhile {    
-    crear_terceto(
-      "BF",
-      new ar.tp.parser.ParserVal("[" + (reglas.size() - 1) + "]"),
-      new ar.tp.parser.ParserVal("-")
-    );
-    pila.push(reglas.size());
-    crear_terceto(
-      "BI",
-      new ar.tp.parser.ParserVal("-"),
-      new ar.tp.parser.ParserVal("-")
-    );
-    t=reglas.get(pila.peek()-1);
-    t.b=new ar.tp.parser.ParserVal(reglas.size());
-    reglas.set(pila.pop()-1,t);
-    t=reglas.get(reglas.size()-1);
-    t.b=new ar.tp.parser.ParserVal("["+pila.pop()+"]");
-    }
+iteracion: DO bloquewhile WHILE condicionwhile {
+     int posInicioDo = pila.pop();
+
+     int posBF = reglas.size();
+     crear_terceto("BF", $4, new ParserVal("-"));
+
+     crear_terceto("BI", new ParserVal("[" + posInicioDo + "]"), new ParserVal("-"));
+
+     Terceto tBF = reglas.get(posBF);
+     tBF.b = new ParserVal("[" + reglas.size() + "]");
+     reglas.set(posBF, tBF);
+   }
     | bloquewhile WHILE condicionwhile {System.out.println("ERROR on line "+lex.line+" 'do' expected");}
 ;
 
@@ -95,10 +107,18 @@ seleccion: IF condicionif THEN bloquethen END_IF
     | IF condicionif THEN bloquethen ELSE bloqueejecutable {System.out.println("ERROR on line "+lex.line+": 'end_if' expected");}
 ;
 
-condicionif: '(' condicion ')' {ar.tp.parser.ParserVal PV = new ar.tp.parser.ParserVal(crear_terceto("BF",new ar.tp.parser.ParserVal("["+(reglas.size()-1)+"]"),new ar.tp.parser.ParserVal("-")));pila.push(reglas.size()-1);$$=PV;}
+condicionif: '(' condicion ')' {
+    ParserVal pv = new ParserVal(
+        crear_terceto("BF",
+            new ParserVal("[" + (reglas.size()-1) + "]"),
+            new ParserVal("-"))
+    );
+    pila.push(reglas.size()-1);   // guardo pos(BF) para backpatch en THEN
+    $$ = pv;
+}
 ;
 
-condicionwhile: '(' condicion ')'
+condicionwhile: '(' condicion ')' { $$ = $2; }
 ;
 
 condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto(">",$1,$3));}
@@ -151,31 +171,36 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
             guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
         };
     }
-    | tipodato FUN identificadorfunct'('')' bloquefunct {
-        ArrayList<String> errores=new ArrayList<String>();
-        if(buscarVariable($3.sval)!=null)
-            errores.add("declared");
-        if(pilaString.pop().compareTo($1.sval)!=0)
-            errores.add("typeNotMatch");
-        $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
-        t=reglas.get(pila.peek()-1);
-        t.a=new ar.tp.parser.ParserVal($3.sval);
-        reglas.set(pila.pop()-1,t);
-        colaAmbito.remove(colaAmbito.size()-1);
-        if (!errores.contains("declared")){
-            guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-        };
-    }
+    | tipodato FUN identificadorfunct '(' ')' bloquefunct {
+          ArrayList<String> errores=new ArrayList<String>();
+          if(buscarVariable($3.sval)!=null)
+              errores.add("declared");
+
+          // Registrar que la función NO tiene parámetros (cadena vacía = 0 params)
+          tiposParFunct.put($3.sval, "");
+
+          $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
+
+          // Vincular el begfunct con el nombre de la función
+          t = reglas.get(pila.peek()-1);
+          t.a = new ar.tp.parser.ParserVal($3.sval);
+          reglas.set(pila.pop()-1, t);
+
+          colaAmbito.remove(colaAmbito.size()-1);
+
+          if (!errores.contains("declared")){
+              guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
+          };
+      }
     | tipodato listavariables ';' {
-        for (int i=0; i<variables.size(); i++) {
-            ArrayList<String> errores=new ArrayList<String>();
-            if(buscarVariable($3.sval)!=null)
-                errores.add("declared");
-            crear_terceto("decl",$1,new ar.tp.parser.ParserVal(variables.get(i)),errores);
-            guardarVariable(variables.get(i),new Symbol($1.sval,"Var"));
-        }
-        variables.clear();
-    }
+      for (String nombre : variables) {
+          ArrayList<String> errores = new ArrayList<>();
+          if (buscarVariable(nombre) != null) errores.add("declared");
+          crear_terceto("decl", $1, new ParserVal(nombre), errores);
+          guardarVariable(nombre, new Symbol($1.sval, "Var"));
+      }
+      variables.clear();
+  }
 ;
 
 identificadorfunct: ID {colaAmbito.add($1.sval+":");}
@@ -236,16 +261,23 @@ listavariables: ID ',' listavariables {variables.add($1.sval);}
     | ID {variables.add($1.sval);}
 ;
 
-invocacion: ID '('')' {$$=new ar.tp.parser.ParserVal(crear_terceto("exec",$1,new ar.tp.parser.ParserVal("-")));pilaString.push(buscarVariable($1.sval).tipo);}
-    | ID '('expresion')' {
-        ArrayList<String> errores=new ArrayList<String>();
-        if (lex.symbols.get($3.sval).uso!="Constante"){
-            if (buscarVariable($3.sval).tipo.compareTo(tiposParFunct.get($1.sval))!=0){
-                errores.add("type missmatch");
-            }
-        }
-        $$=new ar.tp.parser.ParserVal(crear_terceto("exec",$1,$3));}
+invocacion
+ : ID '(' ')' {
+     $$ = new ParserVal( crear_terceto("exec", $1, new ParserVal("-")) );
+     // opcional: tipos/chequeos de cantidad de params
+ }
+ | ID '(' expresion ')' {
+     ArrayList<String> errores = new ArrayList<>();
+     String tArg = tipoDe($3);                  // seguro
+     String tFormal = tiposParFunct.get($1.sval);
+     if (tFormal == null) errores.add("func-undeclared");
+     else if (tArg != null && !tArg.equals(tFormal)) errores.add("type missmatch");
+
+     $$ = new ParserVal( crear_terceto("exec", $1, $3, errores) );
+ }
 ;
+
+
 %%
 
 static Lex lex=null;
@@ -278,6 +310,7 @@ int yylex() {
   try {
     token = lex.getToken();
     yylval = new ar.tp.parser.ParserVal(lex.yylval);
+    System.out.println("TOK " + token + "  lexeme='" + lex.yylval + "'  line=" + lex.line);
   } catch (IOException e) {
     token = -1;
   }

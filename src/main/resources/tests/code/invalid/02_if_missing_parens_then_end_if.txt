@@ -1,8 +1,9 @@
 main
 begin
 uinteger a;
-a := 1;
-if (a > 0) begin
+if a > 0) then begin
+  a := a - 1;
+end else begin
   a := a + 1;
 end end_if
 end

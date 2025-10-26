@@ -1,0 +1,8 @@
+main
+begin
+uinteger fun uno () begin
+  return(1);
+end;
+uinteger a;
+a := uno() + 2;
+end

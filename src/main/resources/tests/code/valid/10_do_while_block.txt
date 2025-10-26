@@ -4,5 +4,5 @@ uinteger i;
 i := 0;
 do begin
   i := i + 1;
-end while (i < 3);
+end while (i < 3)
 end

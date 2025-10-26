@@ -1,9 +1,0 @@
-main
-begin
-uinteger a, r;
-longint fun inc (uinteger x) begin
-  return(x + 1);
-end
-a := 4;
-r := inc(a);
-end

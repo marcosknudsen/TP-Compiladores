@@ -1,0 +1,8 @@
+main
+begin
+longint fun dup (uinteger v) begin
+  longint r;
+  r := v + v;
+  return(r);
+end
+end
