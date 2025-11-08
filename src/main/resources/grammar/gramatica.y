@@ -18,17 +18,21 @@
 programa:ID bloque
 ;
 
-bloque: BEGIN ss END
+bloque: BEGIN ss END opt_pyc
     | BEGIN END
 ;
 
-bloqueejecutable: BEGIN ss END
+bloqueejecutable: BEGIN ss END opt_pyc
 ;
 
 bloquewhile: beginwhile ss END 
 ;
 
-bloquefunct: beginfunct ss END
+bloquefunct: beginfunct ss END opt_pyc
+;
+
+opt_pyc: ';'
+ |
 ;
 
 beginfunct: BEGIN {
@@ -188,19 +192,22 @@ retorno: RETURN '('expresion')' {$$=new ar.tp.parser.ParserVal(crear_terceto("re
 ;
 
 asignacion: ID ASSIGN expresion {
-                                      String tL = tipoDe($1);   // tipo del LHS (variable destino)
-                                      String tR = tipoDe($3);   // tipo del RHS (expresión fuente)
+                                    // mangle correcto para el LHS (variable destino)
+                                    String lhs = getVisibleVariableName($1.sval);
 
-                                      ParserVal rhs = $3;
-                                      // Promoción: si destino es longint y fuente es uinteger => UITOL
-                                      if (isLong(tL) && isUInt(tR)) {
-                                          rhs = promoteToLong($3);
-                                      }
+                                    // tipos usando nombres visibles
+                                    String tL = tipoDe(new ParserVal(lhs));
+                                    String tR = tipoDe($3);
 
-                                      $$ = new ParserVal( crear_terceto(":=", $1, rhs) );
+                                    ParserVal rhs = $3;
+                                    if (isLong(tL) && isUInt(tR)) {
+                                        rhs = promoteToLong($3); // genera (uitol, ...)
                                     }
-    | ID ASSIGN {System.out.println("ERROR on line "+lex.line+": expresion expected");}
-    | ASSIGN expresion {System.out.println("ERROR on line "+lex.line+": identifier expected");}
+
+                                    $$ = new ParserVal( crear_terceto(":=", new ParserVal(lhs), rhs) );
+                                }
+    | ID ASSIGN { System.out.println("ERROR on line "+lex.line+": expresion expected"); }
+    | ASSIGN expresion { System.out.println("ERROR on line "+lex.line+": identifier expected"); }
 ;
 
 print: PRINT '(' CADENA ')'   {
@@ -275,7 +282,8 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
           errores.add("declared");
       }
 
-      crear_terceto("decl", $1, new ParserVal(nombre), errores);
+      String nombreMng = getVariableName(nombre, 0);
+      crear_terceto("decl", $1, new ParserVal(nombreMng), errores);
 
       // Guardar solo si NO estaba declarado en este ámbito
       if (!existeEnEsteAmbito) {
@@ -349,7 +357,7 @@ termino  : factor
 ;
 
 factor
-  : ID { $$ = new ParserVal(getVariableName($1.sval, 0)); }
+  : ID { $$ = new ParserVal(getVisibleVariableName($1.sval)); }
   | CTE
   | '-' CTE
   | invocacion
@@ -488,6 +496,14 @@ Symbol buscarVariable(String nombre){
         variable=lex.symbols.get(getVariableName(nombre,N++));
     }while(variable==null&&N<colaAmbito.size());
     return variable;
+}
+
+static String getVisibleVariableName(String nombre){
+    for (int n = 0; n <= colaAmbito.size(); n++) {
+        String key = getVariableName(nombre, n);
+        if (lex.symbols.containsKey(key)) return key;
+    }
+    return nombre; // fallback si no está en TS
 }
 
 /* static String getVariableName(String nombre,int n){

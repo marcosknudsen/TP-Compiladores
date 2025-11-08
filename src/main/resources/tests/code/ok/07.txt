@@ -1,0 +1,15 @@
+main
+begin
+  longint a;
+  longint fun aa(uinteger x)
+  begin
+    longint a;
+    a := 1;
+    longint fun aaa(uinteger w)
+    begin
+      longint x;
+      return (a + x);
+    end
+    return (a);
+  end
+end
