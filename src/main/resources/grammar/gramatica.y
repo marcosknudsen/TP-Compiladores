@@ -192,19 +192,23 @@ retorno: RETURN '('expresion')' {$$=new ar.tp.parser.ParserVal(crear_terceto("re
 ;
 
 asignacion: ID ASSIGN expresion {
-                                    // mangle correcto para el LHS (variable destino)
                                     String lhs = getVisibleVariableName($1.sval);
-
-                                    // tipos usando nombres visibles
                                     String tL = tipoDe(new ParserVal(lhs));
                                     String tR = tipoDe($3);
 
                                     ParserVal rhs = $3;
+                                    ArrayList<String> errores = new ArrayList<>();
+
                                     if (isLong(tL) && isUInt(tR)) {
-                                        rhs = promoteToLong($3); // genera (uitol, ...)
+                                        // conversión válida (uinteger → longint)
+                                        rhs = promoteToLong($3);
+                                    }
+                                    else if (isUInt(tL) && isLong(tR)) {
+                                        // conversión NO permitida (longint → uinteger)
+                                        errores.add("type mismatch");
                                     }
 
-                                    $$ = new ParserVal( crear_terceto(":=", new ParserVal(lhs), rhs) );
+                                    $$ = new ParserVal(crear_terceto(":=", new ParserVal(lhs), rhs, errores));
                                 }
     | ID ASSIGN { System.out.println("ERROR on line "+lex.line+": expresion expected"); }
     | ASSIGN expresion { System.out.println("ERROR on line "+lex.line+": identifier expected"); }
@@ -306,54 +310,79 @@ expresion : termino
     | expresion '+' termino {
                                   ParserVal a = $1, b = $3;
                                   String ta = tipoDe(a), tb = tipoDe(b);
-
                                   if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
                                   if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
                                   ArrayList<String> errores = new ArrayList<>();
                                   if (ta != null && tb != null && !ta.equals(tb)) {
-                                      // después de promover, si aún difiere, marcá error
-                                      String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                      if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                                    String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                    if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
                                   }
 
-                                  $$ = new ParserVal( crear_terceto("+", a, b, errores) );
+                                  String s = crear_terceto("+", a, b, errores);
+                                  int i = decode(s);
+                                  // tipo del resultado
+                                  String ra = tipoDe(a), rb = tipoDe(b);
+                                  reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+                                  $$ = new ParserVal(s);
                                 }
     | expresion '-' termino {
-                                                              ParserVal a = $1, b = $3;
-                                                              String ta = tipoDe(a), tb = tipoDe(b);
+                                  ParserVal a = $1, b = $3;
+                                  String ta = tipoDe(a), tb = tipoDe(b);
+                                  if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+                                  if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
-                                                              if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
-                                                              if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+                                  ArrayList<String> errores = new ArrayList<>();
+                                  if (ta != null && tb != null && !ta.equals(tb)) {
+                                    String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                    if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                                  }
 
-                                                              ArrayList<String> errores = new ArrayList<>();
-                                                              if (ta != null && tb != null && !ta.equals(tb)) {
-                                                                  // después de promover, si aún difiere, marcá error
-                                                                  String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                                                  if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
-                                                              }
-
-                                                              $$ = new ParserVal( crear_terceto("-", a, b, errores) );
-                                                            }
+                                  String s = crear_terceto("-", a, b, errores);
+                                  int i = decode(s);
+                                  String ra = tipoDe(a), rb = tipoDe(b);
+                                  reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+                                  $$ = new ParserVal(s);
+                                }
 ;
 
 termino  : factor
     | termino '*' factor {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("*", $1, $3, errores));
-      }
-    | termino '/' factor {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("/", $1, $3, errores));
-      }
+                               ParserVal a = $1, b = $3;
+                               String ta = tipoDe(a), tb = tipoDe(b);
+                               if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+                               if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+
+                               ArrayList<String> errores = new ArrayList<>();
+                               if (ta != null && tb != null && !ta.equals(tb)) {
+                                 String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                 if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                               }
+
+                               String s = crear_terceto("*", a, b, errores);
+                               int i = decode(s);
+                               String ra = tipoDe(a), rb = tipoDe(b);
+                               reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+                               $$ = new ParserVal(s);
+                             }
+    | termino '/' factor  {
+                               ParserVal a = $1, b = $3;
+                               String ta = tipoDe(a), tb = tipoDe(b);
+                               if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+                               if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+
+                               ArrayList<String> errores = new ArrayList<>();
+                               if (ta != null && tb != null && !ta.equals(tb)) {
+                                 String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                 if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                               }
+
+                               String s = crear_terceto("/", a, b, errores);
+                               int i = decode(s);
+                               String ra = tipoDe(a), rb = tipoDe(b);
+                               reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+                               $$ = new ParserVal(s);
+                             }
 ;
 
 factor
@@ -570,14 +599,17 @@ boolean declaradoEnEsteAmbito(String nombre) {
 static boolean isUInt(String t)   { return t != null && t.equalsIgnoreCase("uinteger"); }
 static boolean isLong(String t)   { return t != null && t.equalsIgnoreCase("longint"); }
 
-// Si v es uinteger y necesito longint, genero (uitol, v, -) y devuelvo el ParserVal del nuevo terceto
 ParserVal promoteToLong(ParserVal v) {
     String tv = tipoDe(v);
     if (isUInt(tv)) {
-        return new ParserVal( crear_terceto("uitol", v, new ParserVal("-")) );
+        String s = crear_terceto("uitol", v, new ParserVal("-"));
+        int i = decode(s);
+        reglas.get(i).tipo = "longint";   // ← importante
+        return new ParserVal(s);
     }
     return v;
 }
+
 
 static boolean isConstWithinUInt(ParserVal v) {
     if (v == null || v.sval == null) return false;

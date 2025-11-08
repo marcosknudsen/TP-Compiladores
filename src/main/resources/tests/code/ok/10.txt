@@ -1,0 +1,5 @@
+main
+begin
+  uinteger u; longint l;
+  u := l;
+end

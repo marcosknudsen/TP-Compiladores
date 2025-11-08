@@ -1,0 +1,5 @@
+main
+begin
+  uinteger a; uinteger c; longint z;
+  z := a * c;
+end
