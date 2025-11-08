@@ -1,0 +1,10 @@
+main
+begin
+  longint res;
+  uinteger w; uinteger y;
+  longint fun f1 (uinteger x)
+  begin
+    return (x + 2);
+  end;
+  res := w + f1(y);
+end

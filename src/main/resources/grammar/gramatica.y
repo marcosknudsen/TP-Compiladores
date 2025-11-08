@@ -161,7 +161,23 @@ condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto
         | expresion DISTINTO {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
 ;
 
-parametro: tipodato ID {guardarVariable($2.sval,new Symbol($1.sval,"parametro"));$$=$2;pilaString.push($1.sval);}
+parametro: tipodato ID {
+                               // nombre mangleado del parámetro en el ámbito actual (p.ej. "f1:x" o "f1.pp.x" según tu convención)
+                               String nombreMng = getVariableName($2.sval, 0);
+
+                               // 1) Guardarlo en la TS como "parametro" con su tipo (uinteger / longint)
+                               guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
+
+                               // 2) Emitir el terceto de declaración del parámetro en el cuerpo de la función
+                               //    Usamos el nombre mangleado en el operando 'b' para que se vea en reglas/imprimir.
+                               crear_terceto("decl", $1, new ParserVal(nombreMng));
+
+                               // 3) Devolver el nombre mangleado para que la producción 'declaracion' lo reciba en $5
+                               $$ = new ParserVal(nombreMng);
+
+                               // (tu código original)
+                               pilaString.push($1.sval);
+                           }
     | ID {System.out.println("ERROR on line "+lex.line+": datatype expected");}
     | tipodato {System.out.println("ERROR on line "+lex.line+": identifier expected");}
 ;
@@ -200,20 +216,22 @@ print: PRINT '(' CADENA ')'   {
 ;
 
 declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
-        ArrayList<String> errores=new ArrayList<String>();
-        if(buscarVariable($3.sval)!=null)
-            errores.add("declared");
-        tiposParFunct.put($3.sval,pilaString.pop());
-        $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
-        t=reglas.get(pila.peek()-1);
-        t.a=$3;
-        t.b=$5;
-        reglas.set(pila.pop()-1,t);
-        colaAmbito.remove(colaAmbito.size()-1);
-        if (!errores.contains("declared")){
-            guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-        };
-    }
+                                                                                 ArrayList<String> errores = new ArrayList<>();
+                                                                                 if (buscarVariable($3.sval) != null) errores.add("declared");
+
+                                                                                 tiposParFunct.put($3.sval, pilaString.pop());
+                                                                                 $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
+
+                                                                                 t = reglas.get(pila.peek() - 1);   // terceto begfunct
+                                                                                 t.a = $3;                          // nombre de la función
+                                                                                 t.b = $5;                          // *** parámetro mangleado devuelto por 'parametro' ***
+                                                                                 reglas.set(pila.pop() - 1, t);
+
+                                                                                 colaAmbito.remove(colaAmbito.size() - 1);
+                                                                                 if (!errores.contains("declared")) {
+                                                                                     guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
+                                                                                 }
+                                                                             }
     | tipodato FUN identificadorfunct '(' ')' bloquefunct {
           ArrayList<String> errores=new ArrayList<String>();
           if(buscarVariable($3.sval)!=null)
@@ -331,7 +349,7 @@ termino  : factor
 ;
 
 factor
-  : ID
+  : ID { $$ = new ParserVal(getVariableName($1.sval, 0)); }
   | CTE
   | '-' CTE
   | invocacion

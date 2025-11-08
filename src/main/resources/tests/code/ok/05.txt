@@ -1,0 +1,11 @@
+main
+begin
+  uinteger n; uinteger s;
+  s := 0;
+  do
+  begin
+    s := s + n;
+    n := n - 1;
+  end
+  while (n > 0);
+end
