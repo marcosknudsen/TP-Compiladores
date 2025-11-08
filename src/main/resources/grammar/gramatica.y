@@ -145,12 +145,29 @@ retorno: RETURN '('expresion')' {$$=new ar.tp.parser.ParserVal(crear_terceto("re
     | RETURN expresion ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
 ;
 
-asignacion: ID ASSIGN expresion {$$=new ar.tp.parser.ParserVal(crear_terceto(":=",$1,$3));}
+asignacion: ID ASSIGN expresion {
+                                      String tL = tipoDe($1);   // tipo del LHS (variable destino)
+                                      String tR = tipoDe($3);   // tipo del RHS (expresión fuente)
+
+                                      ParserVal rhs = $3;
+                                      // Promoción: si destino es longint y fuente es uinteger => UITOL
+                                      if (isLong(tL) && isUInt(tR)) {
+                                          rhs = promoteToLong($3);
+                                      }
+
+                                      $$ = new ParserVal( crear_terceto(":=", $1, rhs) );
+                                    }
     | ID ASSIGN {System.out.println("ERROR on line "+lex.line+": expresion expected");}
     | ASSIGN expresion {System.out.println("ERROR on line "+lex.line+": identifier expected");}
 ;
 
-print: PRINT '(' CADENA ')'
+print: PRINT '(' CADENA ')'   {
+                                String lit = "\"" + $3.sval + "\"";   // volver a poner comillas
+                                $$ = new ParserVal(
+                                      crear_terceto("print",
+                                                    new ParserVal(lit),
+                                                    new ParserVal("-")));
+                              }
     | PRINT CADENA ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
     | PRINT '(' CADENA {System.out.println("ERROR on line "+lex.line+": ')' expected");}
     | PRINT '(' ')' {System.out.println("ERROR on line "+lex.line+": String expected");}
@@ -192,15 +209,37 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
               guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
           };
       }
-    | tipodato listavariables ';' {
-      for (String nombre : variables) {
-          ArrayList<String> errores = new ArrayList<>();
-          if (buscarVariable(nombre) != null) errores.add("declared");
-          crear_terceto("decl", $1, new ParserVal(nombre), errores);
+| tipodato listavariables ';' {
+  for (String nombre : variables) {
+      ArrayList<String> errores = new ArrayList<>();
+
+      // Clave con mangle del ámbito actual
+      String key = getVariableName(nombre, 0);
+      Symbol s = lex.symbols.get(key);
+
+      // Si el lexer dejó un placeholder (sin 'uso'), lo purgo
+      if (s != null && (s.uso == null || s.uso.isEmpty())) {
+          lex.symbols.remove(key);
+          s = null;
+      }
+
+      // Declarado en este ámbito ⇢ hay símbolo con 'uso' real (Var/Fun/parametro)
+      boolean existeEnEsteAmbito = (s != null) &&
+                                   (s.uso != null && !s.uso.isEmpty());
+
+      if (existeEnEsteAmbito) {
+          errores.add("declared");
+      }
+
+      crear_terceto("decl", $1, new ParserVal(nombre), errores);
+
+      // Guardar solo si NO estaba declarado en este ámbito
+      if (!existeEnEsteAmbito) {
           guardarVariable(nombre, new Symbol($1.sval, "Var"));
       }
-      variables.clear();
   }
+  variables.clear();
+}
 ;
 
 identificadorfunct: ID {colaAmbito.add($1.sval+":");}
@@ -213,21 +252,37 @@ tipodato: UINTEGER  {$$=$1;}
 
 expresion : termino
     | expresion '+' termino {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("+", $1, $3, errores));
-      }
+                                  ParserVal a = $1, b = $3;
+                                  String ta = tipoDe(a), tb = tipoDe(b);
+
+                                  if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+                                  if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+
+                                  ArrayList<String> errores = new ArrayList<>();
+                                  if (ta != null && tb != null && !ta.equals(tb)) {
+                                      // después de promover, si aún difiere, marcá error
+                                      String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                      if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                                  }
+
+                                  $$ = new ParserVal( crear_terceto("+", a, b, errores) );
+                                }
     | expresion '-' termino {
-        ArrayList<String> errores = new ArrayList<>();
-        String t1 = tipoDe($1);
-        String t3 = tipoDe($3);
-        if (t1 != null && t3 != null && !t1.equals(t3))
-            errores.add("datatype missmatch");
-        $$ = new ar.tp.parser.ParserVal(crear_terceto("-", $1, $3, errores));
-      }
+                                                              ParserVal a = $1, b = $3;
+                                                              String ta = tipoDe(a), tb = tipoDe(b);
+
+                                                              if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+                                                              if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+
+                                                              ArrayList<String> errores = new ArrayList<>();
+                                                              if (ta != null && tb != null && !ta.equals(tb)) {
+                                                                  // después de promover, si aún difiere, marcá error
+                                                                  String ta2 = tipoDe(a), tb2 = tipoDe(b);
+                                                                  if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+                                                              }
+
+                                                              $$ = new ParserVal( crear_terceto("-", a, b, errores) );
+                                                            }
 ;
 
 termino  : factor
@@ -249,13 +304,12 @@ termino  : factor
       }
 ;
 
-factor:ID
-    |UINTEGER
-    |'-' UINTEGER
-    | LONGINT
-    | '-' LONGINT
-    |invocacion
-;
+factor
+  : ID
+  | CTE
+  | '-' CTE
+  | invocacion
+  ;
 
 listavariables: ID ',' listavariables {variables.add($1.sval);}
     | ID {variables.add($1.sval);}
@@ -266,15 +320,31 @@ invocacion
      $$ = new ParserVal( crear_terceto("exec", $1, new ParserVal("-")) );
      // opcional: tipos/chequeos de cantidad de params
  }
- | ID '(' expresion ')' {
-     ArrayList<String> errores = new ArrayList<>();
-     String tArg = tipoDe($3);                  // seguro
-     String tFormal = tiposParFunct.get($1.sval);
-     if (tFormal == null) errores.add("func-undeclared");
-     else if (tArg != null && !tArg.equals(tFormal)) errores.add("type missmatch");
+| ID '(' expresion ')'
+  {
+       ArrayList<String> errores = new ArrayList<>();
+       String tArg = tipoDe($3);
+       String tFormal = tiposParFunct.get($1.sval);
 
-     $$ = new ParserVal( crear_terceto("exec", $1, $3, errores) );
- }
+       ParserVal arg = $3;
+
+       if (tFormal == null) {
+           errores.add("func-undeclared");
+       } else if (isLong(tFormal) && isUInt(tArg)) {
+           // widening: uinteger -> longint
+           arg = new ParserVal( crear_terceto("uitol", $3, new ParserVal("-")) );
+       } else if (isUInt(tFormal) && isLong(tArg)) {
+           // narrowing: permitimos si es literal y cabe en uinteger
+           if (!isConstWithinUInt($3)) {
+               errores.add("type missmatch");
+           }
+           // si cabe, lo aceptamos sin generar terceto extra
+       } else if (tArg != null && !tArg.equalsIgnoreCase(tFormal)) {
+           errores.add("type missmatch");
+       }
+
+       $$ = new ParserVal( crear_terceto("exec", $1, arg, errores) );
+   }
 ;
 
 
@@ -283,9 +353,9 @@ invocacion
 static Lex lex=null;
 static Parser par=null;
 int index=0;
-static ArrayList<Terceto> reglas=new ArrayList<Terceto>();
+public static ArrayList<Terceto> reglas=new ArrayList<Terceto>();
 static ArrayList<String> variables=new ArrayList<String>();
-static Stack<Integer> pila = new Stack<>();
+public static Stack<Integer> pila = new Stack<>();
 static Stack<String> pilaString=new Stack<>();
 static ArrayList<String> colaAmbito=new ArrayList<String>();
 static HashMap<String,String> tiposParFunct=new HashMap<>();
@@ -298,6 +368,14 @@ int pointer;
 Terceto t;
 
 public int runParser() {
+    reglas.clear();
+    pila.clear();
+    pilaString.clear();
+    colaAmbito.clear();
+    tiposParFunct.clear();
+    tiposRetFunct.clear();
+    lex.symbols.clear();  // si no usás pre-carga de constantes
+
     return yyparse();
 }
 
@@ -333,7 +411,7 @@ String crear_terceto(String operando,ar.tp.parser.ParserVal a,ar.tp.parser.Parse
     return "["+Integer.toString(reglas.indexOf(t))+"]";
 }
 
-static int mostrarPila(Stack<Integer> pila){
+public static int mostrarPila(Stack<Integer> pila){
     if (pila.empty())
         System.out.println("Pila Vacía");
     else
@@ -342,12 +420,12 @@ static int mostrarPila(Stack<Integer> pila){
     return 0;
 }
 
-static int mostrarReglas(ArrayList<Terceto> reglas){
+public static int mostrarReglas(ArrayList<Terceto> reglas){
     if (reglas.size()==0)
         System.out.println("No hay reglas");
     else
         for (int i=0;i<reglas.size();i++)
-            System.out.println("["+i+"] "+reglas.get(i));
+            System.out.println("["+i+"] "+reglas.get(i).toString());
     return 0;
 }
 
@@ -381,26 +459,24 @@ Symbol buscarVariable(String nombre){
 // Devuelve "uinteger", "longint" o null si no puede determinarlo
 String tipoDe(ar.tp.parser.ParserVal v) {
     if (v == null || v.sval == null) return null;
-
     String s = v.sval;
 
     // ¿Es un terceto? "[n]"
     if (s.length() >= 3 && s.charAt(0) == '[' && s.charAt(s.length()-1) == ']') {
-        // Si guardás tipo en el terceto, úsalo:
         try {
-            int idx = decode(s);              // tu helper para convertir "[n]" -> n
+            int idx = decode(s);
             Terceto tt = reglas.get(idx);
-            return tt.tipo;                   // si aún no llevás tipos, retorna null
+            return tt.tipo; // si no seteás tipo en tercetos, puede ser null
         } catch (Exception e) { return null; }
     }
 
-    // ¿Es constante de la TS?
-    Symbol sc = lex.symbols.get(s);
-    if (sc != null) return sc.tipo;
-
-    // ¿Es variable (con manejo de ámbitos)?
+    // 1) PRIORIDAD: símbolo del ámbito actual (mangling)
     Symbol sv = buscarVariable(s);
     if (sv != null) return sv.tipo;
+
+    // 2) Fallback: símbolo “plano” en la TS
+    Symbol sc = lex.symbols.get(s);
+    if (sc != null) return sc.tipo;
 
     return null;
 }
@@ -421,4 +497,36 @@ void guardarVariable(String nombre,Symbol s){
 static int decode(String str){
     str = str.substring(1, str.length() - 1);
     return Integer.valueOf(str);
+}
+
+boolean declaradoEnEsteAmbito(String nombre) {
+    String key = getVariableName(nombre, 0);   // mangle actual
+    Symbol s = lex.symbols.get(key);
+    if (s == null) return false;
+    // Solo cuenta como declarado si el símbolo tiene "uso" real
+    return s.uso != null && !s.uso.isEmpty();  // Var / Fun / parametro
+}
+
+static boolean isUInt(String t)   { return t != null && t.equalsIgnoreCase("uinteger"); }
+static boolean isLong(String t)   { return t != null && t.equalsIgnoreCase("longint"); }
+
+// Si v es uinteger y necesito longint, genero (uitol, v, -) y devuelvo el ParserVal del nuevo terceto
+ParserVal promoteToLong(ParserVal v) {
+    String tv = tipoDe(v);
+    if (isUInt(tv)) {
+        return new ParserVal( crear_terceto("uitol", v, new ParserVal("-")) );
+    }
+    return v;
+}
+
+static boolean isConstWithinUInt(ParserVal v) {
+    if (v == null || v.sval == null) return false;
+    Symbol s = lex.symbols.get(v.sval);
+    if (s == null || !"cte".equalsIgnoreCase(s.uso)) return false; // no es literal
+    try {
+        long val = Long.parseLong(v.sval);
+        return 0 <= val && val <= 65535;
+    } catch (NumberFormatException e) {
+        return false;
+    }
 }

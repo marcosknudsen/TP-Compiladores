@@ -1,8 +1,0 @@
-main
-begin
-uinteger a
-a := 1 + 2
-if (a > 0) then begin
-  a := a - 1
-end end_if
-end

@@ -1,0 +1,6 @@
+main
+begin
+  uinteger a;
+  uinteger b;
+  a := b + 1;
+end

@@ -26,13 +26,24 @@ public class Terceto {
     }
 
     public String showable(ParserVal a) {
-        if (a.sval == null) return String.valueOf(a.ival);
-        return a.sval;
+        if (a.sval != null) return a.sval;
+        if (a.ival != 0) return Integer.toString(a.ival);
+        if (a.obj != null) return a.obj.toString();
+        return "-";
     }
 
     @Override
     public String toString() {
-        return operand + " " + showable(a) + " " + showable(b)
-                + " " + (errors.size() > 0) + (tipo != null ? (" : " + tipo) : "");
+        // Núcleo estable para los goldens:
+        String core = String.format("( %s , %s , %s )", operand,showable(a),showable(b));
+
+        // Si querés dejar trazas de tipo/errores para debug:
+        if ((tipo != null && !tipo.isEmpty()) || (errors != null && !errors.isEmpty())) {
+            StringBuilder sb = new StringBuilder(core);
+            if (tipo != null && !tipo.isEmpty()) sb.append(" :").append(tipo);
+            if (errors != null && !errors.isEmpty()) sb.append("  errors=").append(errors);
+            return sb.toString();
+        }
+        return core;
     }
 }

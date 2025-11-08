@@ -1,5 +1,0 @@
-main
-begin
-*/ comentario abierto
-a := 1;
-end

@@ -1,6 +1,0 @@
-main
-begin
-uinteger fun f1 (x y) begin
-  return(1);
-end
-end

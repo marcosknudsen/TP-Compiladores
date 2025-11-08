@@ -1,4 +1,0 @@
-main
-begin
-print("hola mundo");
-end
