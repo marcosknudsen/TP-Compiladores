@@ -48,20 +48,51 @@ beginfunct: BEGIN {
 beginwhile: BEGIN {pila.push(reglas.size());}
 ;
 
-bloquethen: BEGIN ss END {
-    // Cerramos el BF de la condición apuntando al “después del THEN” (salto a ELSE)
-    int posBF = pila.pop();
-    Terceto tBF = reglas.get(posBF);
-    // Creamos BI para saltar al final del IF (después del ELSE)
-    ParserVal pvBI = new ParserVal( crear_terceto("BI", new ParserVal("-"), new ParserVal("-")) );
 
-    tBF.b = new ParserVal(reglas.size());  // destino del BF: inicio del bloque ELSE
-    reglas.set(posBF, tBF);
 
-    pila.push(reglas.size()-1);  // guardo pos(BI) para backpatch cuando termine ELSE
-    $$ = pvBI;
-}
-;
+cuerpo:
+    bloqueejecutable
+  | asignacion ';'
+  | print ';'
+  | retorno ';'
+  ;
+
+
+seleccion
+  /* IF sin ELSE */
+  : IF condicionif THEN cuerpo
+    {
+      /* cerrar BF → inicio de ELSE (lo próximo a emitir) */
+      int posBF = pila.pop();
+      Terceto tBF = reglas.get(posBF);
+      tBF.b = new ParserVal("[" + reglas.size() + "]");  // else_start
+      reglas.set(posBF, tBF);
+
+      /* emitir BI y guardar su índice para parchear al final del IF */
+      String sBI = crear_terceto("BI", new ParserVal("-"), new ParserVal("-"));
+      pila.push(decode(sBI));
+    }
+    END_IF
+  /* IF con ELSE */
+| IF condicionif THEN cuerpo
+  {
+      int posBF = pila.pop();
+      Terceto tBF = reglas.get(posBF);
+
+      // 1) Emitir BI y conocer su índice exacto
+      String sBI = crear_terceto("BI", new ParserVal("-"), new ParserVal("-"));
+      int iBI = decode(sBI);
+
+      // 2) El ELSE empieza justo DESPUÉS del BI
+      tBF.b = new ParserVal("[" + (iBI + 1) + "]");
+      reglas.set(posBF, tBF);
+
+      // 3) Guardar el BI para parchearlo al cerrar el IF
+      pila.push(iBI);
+  }
+  ELSE cuerpo
+  END_IF
+  ;
 
 ss: ss s
     | s
@@ -71,18 +102,20 @@ s: declaracion
     | se
 ;
 
-se:seleccion ';' {
-         int posBI = pila.pop();
-         Terceto tBI = reglas.get(posBI);
-         tBI.b = new ParserVal(reglas.size());  // fin de todo el IF
-         reglas.set(posBI, tBI);
-     }
-    | iteracion';'
-    | retorno ';'
-    | asignacion ';'
-    | print ';'
-    | error ';' {System.out.println("ERROR on line "+lex.line+" sentencia invalida");}
-;
+se
+  : seleccion ';'
+    {
+      int posBI = pila.pop();
+      Terceto tBI = reglas.get(posBI);
+      tBI.b = new ParserVal("[" + reglas.size() + "]");  // fin del IF
+      reglas.set(posBI, tBI);
+    }
+  | iteracion ';'
+  | retorno ';'
+  | asignacion ';'
+  | print ';'
+  | error ';' { System.out.println("ERROR on line " + lex.line + " sentencia invalida"); }
+  ;
 
 iteracion: DO bloquewhile WHILE condicionwhile {
      int posInicioDo = pila.pop();
@@ -99,13 +132,6 @@ iteracion: DO bloquewhile WHILE condicionwhile {
     | bloquewhile WHILE condicionwhile {System.out.println("ERROR on line "+lex.line+" 'do' expected");}
 ;
 
-seleccion: IF condicionif THEN bloquethen END_IF
-    | IF condicionif THEN bloquethen ELSE bloqueejecutable END_IF
-    | IF '(' condicion THEN bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": ')' expected");}
-    | IF condicion ')' THEN bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": '(' expected");}
-    | IF condicionif bloquethen ELSE bloqueejecutable END_IF {System.out.println("ERROR on line "+lex.line+": 'then' expected");}
-    | IF condicionif THEN bloquethen ELSE bloqueejecutable {System.out.println("ERROR on line "+lex.line+": 'end_if' expected");}
-;
 
 condicionif: '(' condicion ')' {
     ParserVal pv = new ParserVal(
@@ -388,7 +414,7 @@ int yylex() {
   try {
     token = lex.getToken();
     yylval = new ar.tp.parser.ParserVal(lex.yylval);
-    System.out.println("TOK " + token + "  lexeme='" + lex.yylval + "'  line=" + lex.line);
+    //System.out.println("TOK " + token + "  lexeme='" + lex.yylval + "'  line=" + lex.line);
   } catch (IOException e) {
     token = -1;
   }

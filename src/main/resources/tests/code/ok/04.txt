@@ -1,0 +1,9 @@
+main
+begin
+  uinteger a; uinteger b; uinteger c;
+  if (a + 1 < b) then
+    c := a;
+  else
+    c := b;
+  end_if;
+end
