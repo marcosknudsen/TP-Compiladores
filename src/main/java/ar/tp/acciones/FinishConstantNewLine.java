@@ -12,7 +12,7 @@ public class FinishConstantNewLine extends SemanticAction {
                             HashMap<String, Symbol> symbols,
                             HashMap<String, Integer> reservedWords) throws IOException {
         Pointer p = new FinishConstant().ejecutar(sourceCode, lex, currentChar, symbols, reservedWords);
-        lex.line++;   // el salto de línea sucede DESPUÉS de cerrar el número
+        lex.line++;
         return p;
     }
 }

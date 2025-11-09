@@ -1,0 +1,11 @@
+main
+begin
+  uinteger a; longint r;
+
+  longint fun f (uinteger p)
+  begin
+    return (p);
+  end;
+
+  r := f(a);
+end

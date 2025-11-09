@@ -15,9 +15,9 @@ public class Run {
 
         Parser.setLexer(new Lex(args[0]));
 
-        Parser p = new Parser(false);    // false = sin trazas del parser
+        Parser p = new Parser(false);
         int rc = p.runParser();
-        mostrarReglas(p.reglas);// o p.run() si tu clase lo expone
+        mostrarReglas(p.reglas);
         System.out.println();
         System.out.println("PILA:");
         mostrarPila(p.pila);

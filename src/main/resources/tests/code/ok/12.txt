@@ -1,0 +1,13 @@
+main
+begin
+  uinteger a; uinteger b; longint r;
+
+  longint fun f (uinteger p)
+  begin
+    return (p);
+  end
+
+  r := f(a, b);   // error: demasiados parámetros
+  r := f(r);     // error: tipo real ≠ tipo formal (longint vs uinteger)
+  r := g(a);     // error: función no declarada
+end

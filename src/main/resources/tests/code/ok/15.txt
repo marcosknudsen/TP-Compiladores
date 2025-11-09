@@ -1,0 +1,12 @@
+main
+begin
+  uinteger n; uinteger s;
+  if (n > 0) then
+    do
+    begin
+      s := s + n;
+      n := n - 1;
+    end
+    while (n > 0);
+  end_if;
+end

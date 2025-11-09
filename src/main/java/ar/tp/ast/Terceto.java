@@ -34,10 +34,8 @@ public class Terceto {
 
     @Override
     public String toString() {
-        // Núcleo estable para los goldens:
         String core = String.format("( %s , %s , %s )", operand,showable(a),showable(b));
 
-        // Si querés dejar trazas de tipo/errores para debug:
         if ((tipo != null && !tipo.isEmpty()) || (errors != null && !errors.isEmpty())) {
             StringBuilder sb = new StringBuilder(core);
             if (tipo != null && !tipo.isEmpty()) sb.append(" :").append(tipo);

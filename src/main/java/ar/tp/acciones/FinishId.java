@@ -24,7 +24,7 @@ public class FinishId extends SemanticAction {
             cad = cad.substring(0, 25);
         }
 
-        // ¿Es palabra reservada?
+
         Integer tok = reservedWords.get(cad.toLowerCase());
         lex.yylval = cad;
 
@@ -33,15 +33,11 @@ public class FinishId extends SemanticAction {
             return new Pointer(tok, cad);
         }
 
-        // **NO declarar** el identificador aquí.
-        // Opción 1 (recomendada): no tocar la TS
-        // Opción 2: si querés que exista para tooling, usar placeholder que NO cuenta como declarado
         Symbol s = symbols.get(cad);
         if (s == null) {
-            symbols.put(cad, new Symbol(null, "")); // tipo=null, uso=""
+            symbols.put(cad, new Symbol(null, ""));
         }
 
-        // Devolver token ID (en tu gramática ID=259)
         sourceCode.reset();
         return new Pointer(259, cad);
     }

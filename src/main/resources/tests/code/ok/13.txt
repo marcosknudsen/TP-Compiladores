@@ -1,0 +1,16 @@
+main
+begin
+  uinteger a;
+  uinteger a;          // error: redeclaración en pp
+
+  longint fun a ()     // error: colisión nombre con variable en pp
+  begin
+    return (0);
+  end;
+
+  longint fun f ()
+  begin
+    uinteger a;        // ok: a.pp.f
+    return (a);
+  end;
+end

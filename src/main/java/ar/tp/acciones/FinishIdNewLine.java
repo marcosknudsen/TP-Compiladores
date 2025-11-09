@@ -13,14 +13,14 @@ public class FinishIdNewLine extends SemanticAction {
     public Pointer ejecutar(BufferedReader sourceCode, Lex lex, int currentChar,
             HashMap<String, Symbol> symbols, HashMap<String, Integer> reserverdWords) throws IOException {
         String cad = lex.getString();
-        if (cad.length() > 25) {// recorto cad a 25 c,
+        if (cad.length() > 25) {
             System.out.println(String.format("The string %s is shortened to 25 characters: %s",cad, cad.substring(0, 25)));
             cad = cad.substring(0, 25);
         }
         Symbol value = symbols.get(cad);
         int Token = reserverdWords.getOrDefault(cad, -1);
         lex.yylval = lex.getString();
-        if (Token == -1) {// Si no es PR reescribe el token
+        if (Token == -1) {
             if (value == null) {
                 value = new Symbol("String", "Var");
                 symbols.put(cad, value);

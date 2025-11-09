@@ -58,6 +58,7 @@ cuerpo:
     bloqueejecutable
   | asignacion ';'
   | print ';'
+  | iteracion ';'
   | retorno ';'
   ;
 
@@ -69,32 +70,30 @@ seleccion
       /* cerrar BF → inicio de ELSE (lo próximo a emitir) */
       int posBF = pila.pop();
       Terceto tBF = reglas.get(posBF);
-      tBF.b = new ParserVal("[" + reglas.size() + "]");  // else_start
+      tBF.b = new ParserVal("[" + reglas.size() + "]");
       reglas.set(posBF, tBF);
-
-      /* emitir BI y guardar su índice para parchear al final del IF */
-      String sBI = crear_terceto("BI", new ParserVal("-"), new ParserVal("-"));
-      pila.push(decode(sBI));
     }
     END_IF
   /* IF con ELSE */
 | IF condicionif THEN cuerpo
   {
       int posBF = pila.pop();
-      Terceto tBF = reglas.get(posBF);
 
-      // 1) Emitir BI y conocer su índice exacto
       String sBI = crear_terceto("BI", new ParserVal("-"), new ParserVal("-"));
       int iBI = decode(sBI);
 
-      // 2) El ELSE empieza justo DESPUÉS del BI
+      Terceto tBF = reglas.get(posBF);
       tBF.b = new ParserVal("[" + (iBI + 1) + "]");
       reglas.set(posBF, tBF);
 
-      // 3) Guardar el BI para parchearlo al cerrar el IF
       pila.push(iBI);
-  }
-  ELSE cuerpo
+    }
+  ELSE cuerpo {
+                  int iBI = pila.pop();
+                  Terceto tBI = reglas.get(iBI);
+                  tBI.b = new ParserVal("[" + reglas.size() + "]");
+                  reglas.set(iBI, tBI);
+                }
   END_IF
   ;
 
@@ -108,12 +107,6 @@ s: declaracion
 
 se
   : seleccion ';'
-    {
-      int posBI = pila.pop();
-      Terceto tBI = reglas.get(posBI);
-      tBI.b = new ParserVal("[" + reglas.size() + "]");  // fin del IF
-      reglas.set(posBI, tBI);
-    }
   | iteracion ';'
   | retorno ';'
   | asignacion ';'
@@ -133,7 +126,6 @@ iteracion: DO bloquewhile WHILE condicionwhile {
      tBF.b = new ParserVal("[" + reglas.size() + "]");
      reglas.set(posBF, tBF);
    }
-    | bloquewhile WHILE condicionwhile {System.out.println("ERROR on line "+lex.line+" 'do' expected");}
 ;
 
 
@@ -143,7 +135,7 @@ condicionif: '(' condicion ')' {
             new ParserVal("[" + (reglas.size()-1) + "]"),
             new ParserVal("-"))
     );
-    pila.push(reglas.size()-1);   // guardo pos(BF) para backpatch en THEN
+    pila.push(reglas.size()-1);
     $$ = pv;
 }
 ;
@@ -166,20 +158,14 @@ condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto
 ;
 
 parametro: tipodato ID {
-                               // nombre mangleado del parámetro en el ámbito actual (p.ej. "f1:x" o "f1.pp.x" según tu convención)
                                String nombreMng = getVariableName($2.sval, 0);
 
-                               // 1) Guardarlo en la TS como "parametro" con su tipo (uinteger / longint)
                                guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
 
-                               // 2) Emitir el terceto de declaración del parámetro en el cuerpo de la función
-                               //    Usamos el nombre mangleado en el operando 'b' para que se vea en reglas/imprimir.
                                crear_terceto("decl", $1, new ParserVal(nombreMng));
 
-                               // 3) Devolver el nombre mangleado para que la producción 'declaracion' lo reciba en $5
                                $$ = new ParserVal(nombreMng);
 
-                               // (tu código original)
                                pilaString.push($1.sval);
                            }
     | ID {System.out.println("ERROR on line "+lex.line+": datatype expected");}
@@ -200,11 +186,9 @@ asignacion: ID ASSIGN expresion {
                                     ArrayList<String> errores = new ArrayList<>();
 
                                     if (isLong(tL) && isUInt(tR)) {
-                                        // conversión válida (uinteger → longint)
                                         rhs = promoteToLong($3);
                                     }
                                     else if (isUInt(tL) && isLong(tR)) {
-                                        // conversión NO permitida (longint → uinteger)
                                         errores.add("type mismatch");
                                     }
 
@@ -215,7 +199,7 @@ asignacion: ID ASSIGN expresion {
 ;
 
 print: PRINT '(' CADENA ')'   {
-                                String lit = "\"" + $3.sval + "\"";   // volver a poner comillas
+                                String lit = "\"" + $3.sval + "\"";
                                 $$ = new ParserVal(
                                       crear_terceto("print",
                                                     new ParserVal(lit),
@@ -233,9 +217,9 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
                                                                                  tiposParFunct.put($3.sval, pilaString.pop());
                                                                                  $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-                                                                                 t = reglas.get(pila.peek() - 1);   // terceto begfunct
-                                                                                 t.a = $3;                          // nombre de la función
-                                                                                 t.b = $5;                          // *** parámetro mangleado devuelto por 'parametro' ***
+                                                                                 t = reglas.get(pila.peek() - 1);
+                                                                                 t.a = $3;
+                                                                                 t.b = $5;
                                                                                  reglas.set(pila.pop() - 1, t);
 
                                                                                  colaAmbito.remove(colaAmbito.size() - 1);
@@ -248,12 +232,10 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
           if(buscarVariable($3.sval)!=null)
               errores.add("declared");
 
-          // Registrar que la función NO tiene parámetros (cadena vacía = 0 params)
           tiposParFunct.put($3.sval, "");
 
           $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
 
-          // Vincular el begfunct con el nombre de la función
           t = reglas.get(pila.peek()-1);
           t.a = new ar.tp.parser.ParserVal($3.sval);
           reglas.set(pila.pop()-1, t);
@@ -268,17 +250,14 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
   for (String nombre : variables) {
       ArrayList<String> errores = new ArrayList<>();
 
-      // Clave con mangle del ámbito actual
       String key = getVariableName(nombre, 0);
       Symbol s = lex.symbols.get(key);
 
-      // Si el lexer dejó un placeholder (sin 'uso'), lo purgo
       if (s != null && (s.uso == null || s.uso.isEmpty())) {
           lex.symbols.remove(key);
           s = null;
       }
 
-      // Declarado en este ámbito ⇢ hay símbolo con 'uso' real (Var/Fun/parametro)
       boolean existeEnEsteAmbito = (s != null) &&
                                    (s.uso != null && !s.uso.isEmpty());
 
@@ -289,7 +268,6 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
       String nombreMng = getVariableName(nombre, 0);
       crear_terceto("decl", $1, new ParserVal(nombreMng), errores);
 
-      // Guardar solo si NO estaba declarado en este ámbito
       if (!existeEnEsteAmbito) {
           guardarVariable(nombre, new Symbol($1.sval, "Var"));
       }
@@ -321,7 +299,7 @@ expresion : termino
 
                                   String s = crear_terceto("+", a, b, errores);
                                   int i = decode(s);
-                                  // tipo del resultado
+
                                   String ra = tipoDe(a), rb = tipoDe(b);
                                   reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
                                   $$ = new ParserVal(s);
@@ -399,7 +377,6 @@ listavariables: ID ',' listavariables {variables.add($1.sval);}
 invocacion
  : ID '(' ')' {
      $$ = new ParserVal( crear_terceto("exec", $1, new ParserVal("-")) );
-     // opcional: tipos/chequeos de cantidad de params
  }
 | ID '(' expresion ')'
   {
@@ -412,14 +389,13 @@ invocacion
        if (tFormal == null) {
            errores.add("func-undeclared");
        } else if (isLong(tFormal) && isUInt(tArg)) {
-           // widening: uinteger -> longint
+
            arg = new ParserVal( crear_terceto("uitol", $3, new ParserVal("-")) );
        } else if (isUInt(tFormal) && isLong(tArg)) {
-           // narrowing: permitimos si es literal y cabe en uinteger
+
            if (!isConstWithinUInt($3)) {
                errores.add("type missmatch");
            }
-           // si cabe, lo aceptamos sin generar terceto extra
        } else if (tArg != null && !tArg.equalsIgnoreCase(tFormal)) {
            errores.add("type missmatch");
        }
@@ -455,7 +431,7 @@ public int runParser() {
     colaAmbito.clear();
     tiposParFunct.clear();
     tiposRetFunct.clear();
-    lex.symbols.clear();  // si no usás pre-carga de constantes
+    lex.symbols.clear();
 
     return yyparse();
 }
@@ -532,7 +508,7 @@ static String getVisibleVariableName(String nombre){
         String key = getVariableName(nombre, n);
         if (lex.symbols.containsKey(key)) return key;
     }
-    return nombre; // fallback si no está en TS
+    return nombre;
 }
 
 /* static String getVariableName(String nombre,int n){
@@ -545,12 +521,10 @@ static String getVisibleVariableName(String nombre){
     return nombre;
 } */
 
-// Devuelve "uinteger", "longint" o null si no puede determinarlo
 String tipoDe(ar.tp.parser.ParserVal v) {
     if (v == null || v.sval == null) return null;
     String s = v.sval;
 
-    // ¿Es un terceto? "[n]"
     if (s.length() >= 3 && s.charAt(0) == '[' && s.charAt(s.length()-1) == ']') {
         try {
             int idx = decode(s);
@@ -559,11 +533,9 @@ String tipoDe(ar.tp.parser.ParserVal v) {
         } catch (Exception e) { return null; }
     }
 
-    // 1) PRIORIDAD: símbolo del ámbito actual (mangling)
     Symbol sv = buscarVariable(s);
     if (sv != null) return sv.tipo;
 
-    // 2) Fallback: símbolo “plano” en la TS
     Symbol sc = lex.symbols.get(s);
     if (sc != null) return sc.tipo;
 
@@ -589,11 +561,11 @@ static int decode(String str){
 }
 
 boolean declaradoEnEsteAmbito(String nombre) {
-    String key = getVariableName(nombre, 0);   // mangle actual
+    String key = getVariableName(nombre, 0);
     Symbol s = lex.symbols.get(key);
     if (s == null) return false;
-    // Solo cuenta como declarado si el símbolo tiene "uso" real
-    return s.uso != null && !s.uso.isEmpty();  // Var / Fun / parametro
+
+    return s.uso != null && !s.uso.isEmpty();
 }
 
 static boolean isUInt(String t)   { return t != null && t.equalsIgnoreCase("uinteger"); }
@@ -604,7 +576,7 @@ ParserVal promoteToLong(ParserVal v) {
     if (isUInt(tv)) {
         String s = crear_terceto("uitol", v, new ParserVal("-"));
         int i = decode(s);
-        reglas.get(i).tipo = "longint";   // ← importante
+        reglas.get(i).tipo = "longint";
         return new ParserVal(s);
     }
     return v;
@@ -614,7 +586,7 @@ ParserVal promoteToLong(ParserVal v) {
 static boolean isConstWithinUInt(ParserVal v) {
     if (v == null || v.sval == null) return false;
     Symbol s = lex.symbols.get(v.sval);
-    if (s == null || !"cte".equalsIgnoreCase(s.uso)) return false; // no es literal
+    if (s == null || !"cte".equalsIgnoreCase(s.uso)) return false;
     try {
         long val = Long.parseLong(v.sval);
         return 0 <= val && val <= 65535;

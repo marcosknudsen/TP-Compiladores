@@ -14,13 +14,11 @@ public class FinishString extends SemanticAction {
     public Pointer ejecutar(BufferedReader sourceCode, Lex lex, int currentChar,
                             HashMap<String, Symbol> symbols, HashMap<String, Integer> reservedWords) throws IOException {
 
-        String lit = lex.getString();   // debe estar sin comillas
+        String lit = lex.getString();
         lex.yylval = lit;
 
-        // opcional: registrar como constante
         symbols.putIfAbsent(lit, new Symbol("String", "cte"));
 
-        // OJO: aquí NO resetear
         return new Pointer(ar.tp.parser.Parser.CADENA, lit);
     }
 
