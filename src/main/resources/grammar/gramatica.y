@@ -37,11 +37,11 @@ opt_pyc: ';'
 
 beginfunct: BEGIN {
 
-    $$ = new ar.tp.parser.ParserVal(
+    $$ = new ParserVal(
         crear_terceto(
             "begfunct",
-            new ar.tp.parser.ParserVal("-"),
-            new ar.tp.parser.ParserVal("-")
+            new ParserVal("-"),
+            new ParserVal("-")
         )
     );
 
@@ -64,17 +64,14 @@ cuerpo:
 
 
 seleccion
-  /* IF sin ELSE */
   : IF condicionif THEN cuerpo
     {
-      /* cerrar BF → inicio de ELSE (lo próximo a emitir) */
       int posBF = pila.pop();
       Terceto tBF = reglas.get(posBF);
       tBF.b = new ParserVal("[" + reglas.size() + "]");
       reglas.set(posBF, tBF);
     }
     END_IF
-  /* IF con ELSE */
 | IF condicionif THEN cuerpo
   {
       int posBF = pila.pop();
@@ -88,12 +85,13 @@ seleccion
 
       pila.push(iBI);
     }
-  ELSE cuerpo {
-                  int iBI = pila.pop();
-                  Terceto tBI = reglas.get(iBI);
-                  tBI.b = new ParserVal("[" + reglas.size() + "]");
-                  reglas.set(iBI, tBI);
-                }
+  ELSE cuerpo
+  {
+      int iBI = pila.pop();
+      Terceto tBI = reglas.get(iBI);
+      tBI.b = new ParserVal("[" + reglas.size() + "]");
+      reglas.set(iBI, tBI);
+  }
   END_IF
   ;
 
@@ -143,12 +141,12 @@ condicionif: '(' condicion ')' {
 condicionwhile: '(' condicion ')' { $$ = $2; }
 ;
 
-condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto(">",$1,$3));}
-        | expresion '<' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto("<",$1,$3));}
-        | expresion '=' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto("=",$1,$3));}
-        | expresion MAYOR_IGUAL expresion {$$=new ar.tp.parser.ParserVal(crear_terceto(">=",$1,$3));}
-        | expresion MENOR_IGUAL expresion {$$=new ar.tp.parser.ParserVal(crear_terceto("<=",$1,$3));}
-        | expresion DISTINTO expresion {$$=new ar.tp.parser.ParserVal(crear_terceto("<>",$1,$3));}
+condicion: expresion '>' expresion  {$$ = new ParserVal(crear_terceto(">", $1, $3));}
+        | expresion '<' expresion  {$$ = new ParserVal(crear_terceto("<", $1, $3));}
+        | expresion '=' expresion  {$$ = new ParserVal(crear_terceto("=", $1, $3));}
+        | expresion MAYOR_IGUAL expresion {$$ = new ParserVal(crear_terceto(">=", $1, $3));}
+        | expresion MENOR_IGUAL expresion {$$ = new ParserVal(crear_terceto("<=", $1, $3));}
+        | expresion DISTINTO expresion {$$ = new ParserVal(crear_terceto("<>", $1, $3));}
         | expresion '>' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
         | expresion '<' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
         | expresion '=' {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
@@ -157,88 +155,94 @@ condicion: expresion '>' expresion  {$$=new ar.tp.parser.ParserVal(crear_terceto
         | expresion DISTINTO {System.out.println("ERROR on line "+lex.line+": second expresion expected");}
 ;
 
-parametro: tipodato ID {
-                               String nombreMng = getVariableName($2.sval, 0);
+parametro: tipodato ID
+{
+   String nombreMng = getVariableName($2.sval, 0);
 
-                               guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
+   guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
 
-                               crear_terceto("decl", $1, new ParserVal(nombreMng));
+   crear_terceto("decl", $1, new ParserVal(nombreMng));
 
-                               $$ = new ParserVal(nombreMng);
+   $$ = new ParserVal(nombreMng);
 
-                               pilaString.push($1.sval);
-                           }
+   pilaString.push($1.sval);
+}
     | ID {System.out.println("ERROR on line "+lex.line+": datatype expected");}
     | tipodato {System.out.println("ERROR on line "+lex.line+": identifier expected");}
 ;
 
-retorno: RETURN '('expresion')' {$$=new ar.tp.parser.ParserVal(crear_terceto("ret",$3,new ar.tp.parser.ParserVal("-")));}
+retorno: RETURN '('expresion')' {$$ = new ParserVal(crear_terceto("ret", $3, new ParserVal("-")));}
     | RETURN '(' expresion {System.out.println("ERROR on line "+lex.line+": ')' expected");}
     | RETURN expresion ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
 ;
 
-asignacion: ID ASSIGN expresion {
-                                    String lhs = getVisibleVariableName($1.sval);
-                                    String tL = tipoDe(new ParserVal(lhs));
-                                    String tR = tipoDe($3);
+asignacion: ID ASSIGN expresion
+{
+    String lhs = getVisibleVariableName($1.sval);
+    String tL = tipoDe(new ParserVal(lhs));
+    String tR = tipoDe($3);
 
-                                    ParserVal rhs = $3;
-                                    ArrayList<String> errores = new ArrayList<>();
+    ParserVal rhs = $3;
+    ArrayList<String> errores = new ArrayList<>();
 
-                                    if (isLong(tL) && isUInt(tR)) {
-                                        rhs = promoteToLong($3);
-                                    }
-                                    else if (isUInt(tL) && isLong(tR)) {
-                                        errores.add("type mismatch");
-                                    }
+    if (isLong(tL) && isUInt(tR)) {
+        rhs = promoteToLong($3);
+    }
+    else if (isUInt(tL) && isLong(tR)) {
+        errores.add("type mismatch");
+    }
 
-                                    $$ = new ParserVal(crear_terceto(":=", new ParserVal(lhs), rhs, errores));
-                                }
+    $$ = new ParserVal(crear_terceto(":=", new ParserVal(lhs), rhs, errores));
+}
     | ID ASSIGN { System.out.println("ERROR on line "+lex.line+": expresion expected"); }
     | ASSIGN expresion { System.out.println("ERROR on line "+lex.line+": identifier expected"); }
 ;
 
-print: PRINT '(' CADENA ')'   {
-                                String lit = "\"" + $3.sval + "\"";
-                                $$ = new ParserVal(
-                                      crear_terceto("print",
-                                                    new ParserVal(lit),
-                                                    new ParserVal("-")));
-                              }
+print: PRINT '(' CADENA ')'
+{
+String lit = "\"" + $3.sval + "\"";
+$$ = new ParserVal(
+      crear_terceto("print",
+                    new ParserVal(lit),
+                    new ParserVal("-")));
+}
     | PRINT CADENA ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
     | PRINT '(' CADENA {System.out.println("ERROR on line "+lex.line+": ')' expected");}
     | PRINT '(' ')' {System.out.println("ERROR on line "+lex.line+": String expected");}
 ;
 
-declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct {
-                                                                                 ArrayList<String> errores = new ArrayList<>();
-                                                                                 if (buscarVariable($3.sval) != null) errores.add("declared");
+declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct
+{
+     ArrayList<String> errores = new ArrayList<>();
+     if (buscarVariable($3.sval) != null) errores.add("declared");
 
-                                                                                 tiposParFunct.put($3.sval, pilaString.pop());
-                                                                                 $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
+     tiposParFunct.put($3.sval, pilaString.pop());
+     $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-                                                                                 t = reglas.get(pila.peek() - 1);
-                                                                                 t.a = $3;
-                                                                                 t.b = $5;
-                                                                                 reglas.set(pila.pop() - 1, t);
+     t = reglas.get(pila.peek() - 1);
+     t.a = $3;
+     t.b = $5;
+     reglas.set(pila.pop() - 1, t);
 
-                                                                                 colaAmbito.remove(colaAmbito.size() - 1);
-                                                                                 if (!errores.contains("declared")) {
-                                                                                     guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
-                                                                                 }
-                                                                             }
+     colaAmbito.remove(colaAmbito.size() - 1);
+     if (!errores.contains("declared")) {
+         guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
+     }
+ }
     | tipodato FUN identificadorfunct '(' ')' bloquefunct {
           ArrayList<String> errores=new ArrayList<String>();
-          if(buscarVariable($3.sval)!=null)
+
+          if(buscarVariable($3.sval)!=null){
               errores.add("declared");
+          }
 
           tiposParFunct.put($3.sval, "");
 
-          $$=new ar.tp.parser.ParserVal(crear_terceto("endfun",$3,new ar.tp.parser.ParserVal("-"),errores));
+          $$=new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-          t = reglas.get(pila.peek()-1);
-          t.a = new ar.tp.parser.ParserVal($3.sval);
-          reglas.set(pila.pop()-1, t);
+          t = reglas.get(pila.peek() - 1);
+          t.a = new ParserVal($3.sval);
+          reglas.set(pila.pop() - 1, t);
 
           colaAmbito.remove(colaAmbito.size()-1);
 
@@ -280,87 +284,91 @@ identificadorfunct: ID {colaAmbito.add($1.sval+":");}
 ;
 
 
-tipodato: UINTEGER  {$$=$1;}
-    | LONGINT  {$$=$1;}
+tipodato: UINTEGER  {$$ = $1;}
+    | LONGINT  {$$ = $1;}
 ;
 
 expresion : termino
-    | expresion '+' termino {
-                                  ParserVal a = $1, b = $3;
-                                  String ta = tipoDe(a), tb = tipoDe(b);
-                                  if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
-                                  if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+    | expresion '+' termino
+    {
+      ParserVal a = $1, b = $3;
+      String ta = tipoDe(a), tb = tipoDe(b);
+      if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+      if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
-                                  ArrayList<String> errores = new ArrayList<>();
-                                  if (ta != null && tb != null && !ta.equals(tb)) {
-                                    String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                    if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
-                                  }
+      ArrayList<String> errores = new ArrayList<>();
+      if (ta != null && tb != null && !ta.equals(tb)) {
+        String ta2 = tipoDe(a), tb2 = tipoDe(b);
+        if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+      }
 
-                                  String s = crear_terceto("+", a, b, errores);
-                                  int i = decode(s);
+      String s = crear_terceto("+", a, b, errores);
+      int i = decode(s);
 
-                                  String ra = tipoDe(a), rb = tipoDe(b);
-                                  reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
-                                  $$ = new ParserVal(s);
-                                }
-    | expresion '-' termino {
-                                  ParserVal a = $1, b = $3;
-                                  String ta = tipoDe(a), tb = tipoDe(b);
-                                  if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
-                                  if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+      String ra = tipoDe(a), rb = tipoDe(b);
+      reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+      $$ = new ParserVal(s);
+    }
+    | expresion '-' termino
+    {
+      ParserVal a = $1, b = $3;
+      String ta = tipoDe(a), tb = tipoDe(b);
+      if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+      if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
-                                  ArrayList<String> errores = new ArrayList<>();
-                                  if (ta != null && tb != null && !ta.equals(tb)) {
-                                    String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                    if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
-                                  }
+      ArrayList<String> errores = new ArrayList<>();
+      if (ta != null && tb != null && !ta.equals(tb)) {
+        String ta2 = tipoDe(a), tb2 = tipoDe(b);
+        if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+      }
 
-                                  String s = crear_terceto("-", a, b, errores);
-                                  int i = decode(s);
-                                  String ra = tipoDe(a), rb = tipoDe(b);
-                                  reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
-                                  $$ = new ParserVal(s);
-                                }
+      String s = crear_terceto("-", a, b, errores);
+      int i = decode(s);
+      String ra = tipoDe(a), rb = tipoDe(b);
+      reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+      $$ = new ParserVal(s);
+    }
 ;
 
 termino  : factor
-    | termino '*' factor {
-                               ParserVal a = $1, b = $3;
-                               String ta = tipoDe(a), tb = tipoDe(b);
-                               if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
-                               if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+    | termino '*' factor
+    {
+        ParserVal a = $1, b = $3;
+        String ta = tipoDe(a), tb = tipoDe(b);
+        if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+        if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
-                               ArrayList<String> errores = new ArrayList<>();
-                               if (ta != null && tb != null && !ta.equals(tb)) {
-                                 String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                 if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
-                               }
+        ArrayList<String> errores = new ArrayList<>();
+        if (ta != null && tb != null && !ta.equals(tb)) {
+         String ta2 = tipoDe(a), tb2 = tipoDe(b);
+         if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+        }
 
-                               String s = crear_terceto("*", a, b, errores);
-                               int i = decode(s);
-                               String ra = tipoDe(a), rb = tipoDe(b);
-                               reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
-                               $$ = new ParserVal(s);
-                             }
-    | termino '/' factor  {
-                               ParserVal a = $1, b = $3;
-                               String ta = tipoDe(a), tb = tipoDe(b);
-                               if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
-                               if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
+        String s = crear_terceto("*", a, b, errores);
+        int i = decode(s);
+        String ra = tipoDe(a), rb = tipoDe(b);
+        reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+        $$ = new ParserVal(s);
+    }
+    | termino '/' factor
+    {
+        ParserVal a = $1, b = $3;
+        String ta = tipoDe(a), tb = tipoDe(b);
+        if (isLong(ta) && isUInt(tb)) b = promoteToLong(b);
+        if (isLong(tb) && isUInt(ta)) a = promoteToLong(a);
 
-                               ArrayList<String> errores = new ArrayList<>();
-                               if (ta != null && tb != null && !ta.equals(tb)) {
-                                 String ta2 = tipoDe(a), tb2 = tipoDe(b);
-                                 if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
-                               }
+        ArrayList<String> errores = new ArrayList<>();
+        if (ta != null && tb != null && !ta.equals(tb)) {
+         String ta2 = tipoDe(a), tb2 = tipoDe(b);
+         if (ta2 != null && tb2 != null && !ta2.equals(tb2)) errores.add("datatype missmatch");
+        }
 
-                               String s = crear_terceto("/", a, b, errores);
-                               int i = decode(s);
-                               String ra = tipoDe(a), rb = tipoDe(b);
-                               reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
-                               $$ = new ParserVal(s);
-                             }
+        String s = crear_terceto("/", a, b, errores);
+        int i = decode(s);
+        String ra = tipoDe(a), rb = tipoDe(b);
+        reglas.get(i).tipo = (isLong(ra) || isLong(rb)) ? "longint" : "uinteger";
+        $$ = new ParserVal(s);
+    }
 ;
 
 factor
@@ -396,6 +404,7 @@ invocacion
            if (!isConstWithinUInt($3)) {
                errores.add("type missmatch");
            }
+
        } else if (tArg != null && !tArg.equalsIgnoreCase(tFormal)) {
            errores.add("type missmatch");
        }
@@ -407,16 +416,16 @@ invocacion
 
 %%
 
-static Lex lex=null;
-static Parser par=null;
-int index=0;
-public static ArrayList<Terceto> reglas=new ArrayList<Terceto>();
-static ArrayList<String> variables=new ArrayList<String>();
+static Lex lex = null;
+static Parser par = null;
+int index = 0;
+public static ArrayList<Terceto> reglas = new ArrayList<Terceto>();
+static ArrayList<String> variables = new ArrayList<String>();
 public static Stack<Integer> pila = new Stack<>();
-static Stack<String> pilaString=new Stack<>();
-static ArrayList<String> colaAmbito=new ArrayList<String>();
-static HashMap<String,String> tiposParFunct=new HashMap<>();
-static HashMap<String,String> tiposRetFunct=new HashMap<>();
+static Stack<String> pilaString = new Stack<>();
+static ArrayList<String> colaAmbito = new ArrayList<String>();
+static HashMap<String,String> tiposParFunct = new HashMap<>();
+static HashMap<String,String> tiposRetFunct = new HashMap<>();
 
 ar.tp.parser.ParserVal PV;
 
@@ -453,36 +462,43 @@ int yylex() {
 }
 
 void yyerror(String s){
-    System.out.println(s+" on line "+lex.line);
+    System.out.println(s + " on line " + lex.line);
 }
 
-String crear_terceto(String operando,ar.tp.parser.ParserVal a,ar.tp.parser.ParserVal b){
-    Terceto t=new Terceto(operando, a, b);
+String crear_terceto(String operando, ParserVal a, ParserVal b){
+    Terceto t = new Terceto(operando, a, b);
     reglas.add(t);
     return "["+Integer.toString(reglas.indexOf(t))+"]";
 }
 
-String crear_terceto(String operando,ar.tp.parser.ParserVal a,ar.tp.parser.ParserVal b,ArrayList<String> errores){
-    Terceto t=new Terceto(operando, a, b,errores);
+String crear_terceto(String operando, ParserVal a, ParserVal b, ArrayList<String> errores){
+    Terceto t = new Terceto(operando, a, b,errores);
     reglas.add(t);
     return "["+Integer.toString(reglas.indexOf(t))+"]";
 }
 
 public static int mostrarPila(Stack<Integer> pila){
-    if (pila.empty())
+    if (pila.empty()){
         System.out.println("Pila Vacía");
-    else
-        for (int i=0;i<pila.size();i++)
+    }
+    else{
+        for (int i = 0 ; i < pila.size() ; i++){
             System.out.println(pila.get(i));
+        }
+    }
+
     return 0;
 }
 
 public static int mostrarReglas(ArrayList<Terceto> reglas){
-    if (reglas.size()==0)
+    if (reglas.size() == 0){
         System.out.println("No hay reglas");
-    else
-        for (int i=0;i<reglas.size();i++)
+    }
+    else{
+        for (int i = 0 ; i < reglas.size() ; i++){
             System.out.println("["+i+"] "+reglas.get(i).toString());
+        }
+    }
     return 0;
 }
 
@@ -497,62 +513,62 @@ static void mostrarTS(){
 Symbol buscarVariable(String nombre){
     Symbol variable;
     int N=0;
-    do{
+    do {
         variable=lex.symbols.get(getVariableName(nombre,N++));
-    }while(variable==null&&N<colaAmbito.size());
+    } while (variable == null && N < colaAmbito.size());
     return variable;
 }
 
 static String getVisibleVariableName(String nombre){
     for (int n = 0; n <= colaAmbito.size(); n++) {
         String key = getVariableName(nombre, n);
-        if (lex.symbols.containsKey(key)) return key;
+        if (lex.symbols.containsKey(key)){
+            return key;
+        }
     }
     return nombre;
 }
 
-/* static String getVariableName(String nombre,int n){
-    String sufijo="";
-    for (int i=0;i<colaAmbito.size()-n;i++){
-        sufijo=sufijo+colaAmbito.get(i);
-    }
-    nombre=sufijo+nombre;
-    System.out.print(nombre);
-    return nombre;
-} */
-
 String tipoDe(ar.tp.parser.ParserVal v) {
-    if (v == null || v.sval == null) return null;
+    if (v == null || v.sval == null){
+        return null;
+    }
     String s = v.sval;
 
-    if (s.length() >= 3 && s.charAt(0) == '[' && s.charAt(s.length()-1) == ']') {
+    if (s.length() >= 3 && s.charAt(0) == '[' && s.charAt(s.length() - 1) == ']') {
         try {
             int idx = decode(s);
             Terceto tt = reglas.get(idx);
-            return tt.tipo; // si no seteás tipo en tercetos, puede ser null
-        } catch (Exception e) { return null; }
+            return tt.tipo;
+        } catch (Exception e){
+            return null;
+        }
     }
 
     Symbol sv = buscarVariable(s);
-    if (sv != null) return sv.tipo;
+    if (sv != null){
+        return sv.tipo;
+    }
 
     Symbol sc = lex.symbols.get(s);
-    if (sc != null) return sc.tipo;
+    if (sc != null){
+        return sc.tipo;
+    }
 
     return null;
 }
 
 
-static String getVariableName(String nombre,int n){
-    String sufijo="";
-    for (int i=0;i<colaAmbito.size()-n;i++){
-        sufijo=sufijo+colaAmbito.get(i);
+static String getVariableName(String nombre, int n){
+    String sufijo = "";
+    for (int i = 0; i < colaAmbito.size() - n; i++){
+        sufijo = sufijo + colaAmbito.get(i);
     }
-    return sufijo+nombre;
+    return sufijo + nombre;
 }
 
-void guardarVariable(String nombre,Symbol s){
-    lex.symbols.put(getVariableName(nombre,0),s);
+void guardarVariable(String nombre, Symbol s){
+    lex.symbols.put(getVariableName(nombre, 0), s);
 }
 
 static int decode(String str){
@@ -563,13 +579,21 @@ static int decode(String str){
 boolean declaradoEnEsteAmbito(String nombre) {
     String key = getVariableName(nombre, 0);
     Symbol s = lex.symbols.get(key);
-    if (s == null) return false;
+    if (s == null){
+        return false;
+    }
 
     return s.uso != null && !s.uso.isEmpty();
 }
 
-static boolean isUInt(String t)   { return t != null && t.equalsIgnoreCase("uinteger"); }
-static boolean isLong(String t)   { return t != null && t.equalsIgnoreCase("longint"); }
+static boolean isUInt(String t){
+    return t != null && t.equalsIgnoreCase("uinteger");
+
+}
+
+static boolean isLong(String t){
+    return t != null && t.equalsIgnoreCase("longint");
+}
 
 ParserVal promoteToLong(ParserVal v) {
     String tv = tipoDe(v);
@@ -584,9 +608,15 @@ ParserVal promoteToLong(ParserVal v) {
 
 
 static boolean isConstWithinUInt(ParserVal v) {
-    if (v == null || v.sval == null) return false;
+    if (v == null || v.sval == null){
+        return false;
+    }
+
     Symbol s = lex.symbols.get(v.sval);
-    if (s == null || !"cte".equalsIgnoreCase(s.uso)) return false;
+    if (s == null || !"cte".equalsIgnoreCase(s.uso)){
+        return false;
+    }
+
     try {
         long val = Long.parseLong(v.sval);
         return 0 <= val && val <= 65535;
