@@ -171,7 +171,28 @@ parametro: tipodato ID
     | tipodato {System.out.println("ERROR on line "+lex.line+": identifier expected");}
 ;
 
-retorno: RETURN '('expresion')' {$$ = new ParserVal(crear_terceto("ret", $3, new ParserVal("-")));}
+retorno: RETURN '('expresion')' {
+                                      ArrayList<String> errores = new ArrayList<>();
+
+                                      String funActual = pilaFun.isEmpty() ? null : pilaFun.peek();
+
+                                      String tRet = (funActual != null) ? tiposRetFunct.get(funActual) : null;
+                                      String tExp = tipoDe($3);
+
+                                      ParserVal expr = $3;
+
+                                      if (isLong(tRet) && isUInt(tExp)) {
+                                          expr = promoteToLong($3);
+                                      } else if (isUInt(tRet) && isLong(tExp)) {
+                                          if (!isConstWithinUInt($3)) {
+                                              errores.add("type missmatch");
+                                          }
+                                      } else if (tRet != null && tExp != null && !tRet.equalsIgnoreCase(tExp)) {
+                                          errores.add("type missmatch");
+                                      }
+
+                                      $$ = new ParserVal(crear_terceto("ret", expr, new ParserVal("-"), errores));
+                                  }
     | RETURN '(' expresion {System.out.println("ERROR on line "+lex.line+": ')' expected");}
     | RETURN expresion ')' {System.out.println("ERROR on line "+lex.line+": '(' expected");}
 ;
@@ -211,45 +232,50 @@ $$ = new ParserVal(
     | PRINT '(' ')' {System.out.println("ERROR on line "+lex.line+": String expected");}
 ;
 
-declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct
+declaracion: tipodato FUN identificadorfunct '(' parametro ')'
 {
-     ArrayList<String> errores = new ArrayList<>();
-     if (buscarVariable($3.sval) != null) errores.add("declared");
+    tiposParFunct.put($3.sval, pilaString.pop());
+    tiposRetFunct.put($3.sval, $1.sval);
+}
+bloquefunct
+{
+    ArrayList<String> errores = new ArrayList<>();
+    if (buscarVariable($3.sval) != null) errores.add("declared");
 
-     tiposParFunct.put($3.sval, pilaString.pop());
-     $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
+    $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-     t = reglas.get(pila.peek() - 1);
-     t.a = $3;
-     t.b = $5;
-     reglas.set(pila.pop() - 1, t);
+    t = reglas.get(pila.peek() - 1);
+    t.a = $3;
+    t.b = $5;
+    reglas.set(pila.pop() - 1, t);
 
-     colaAmbito.remove(colaAmbito.size() - 1);
-     if (!errores.contains("declared")) {
-         guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
+    colaAmbito.remove(colaAmbito.size() - 1);
+    if (!errores.contains("declared")) {
+        guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
+    }
+    pilaFun.pop();
+}
+    | tipodato FUN identificadorfunct '(' ')'
+     {
+         tiposParFunct.put($3.sval, "");
+         tiposRetFunct.put($3.sval, $1.sval);
      }
- }
-    | tipodato FUN identificadorfunct '(' ')' bloquefunct {
-          ArrayList<String> errores=new ArrayList<String>();
+     bloquefunct  {
+                      ArrayList<String> errores = new ArrayList<>();
+                      if (buscarVariable($3.sval) != null) errores.add("declared");
 
-          if(buscarVariable($3.sval)!=null){
-              errores.add("declared");
-          }
+                      $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-          tiposParFunct.put($3.sval, "");
+                      t = reglas.get(pila.peek() - 1);
+                      t.a = new ParserVal($3.sval);
+                      reglas.set(pila.pop() - 1, t);
 
-          $$=new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
-
-          t = reglas.get(pila.peek() - 1);
-          t.a = new ParserVal($3.sval);
-          reglas.set(pila.pop() - 1, t);
-
-          colaAmbito.remove(colaAmbito.size()-1);
-
-          if (!errores.contains("declared")){
-              guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-          };
-      }
+                      colaAmbito.remove(colaAmbito.size() - 1);
+                      if (!errores.contains("declared")){
+                          guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
+                      }
+                      pilaFun.pop();
+                  }
 | tipodato listavariables ';' {
   for (String nombre : variables) {
       ArrayList<String> errores = new ArrayList<>();
@@ -280,7 +306,10 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')' bloquefunct
 }
 ;
 
-identificadorfunct: ID {colaAmbito.add($1.sval+":");}
+identificadorfunct: ID {
+                           colaAmbito.add($1.sval + ":");
+                           pilaFun.push($1.sval);
+                       }
 ;
 
 
@@ -383,34 +412,40 @@ listavariables: ID ',' listavariables {variables.add($1.sval);}
 ;
 
 invocacion
- : ID '(' ')' {
-     $$ = new ParserVal( crear_terceto("exec", $1, new ParserVal("-")) );
- }
+ : ID '(' ')'  {
+                     String s = crear_terceto("exec", $1, new ParserVal("-"));
+                     int i = decode(s);
+                     String tret = tiposRetFunct.get($1.sval);
+                     reglas.get(i).tipo = (tret != null) ? tret.toLowerCase() : null;
+                     $$ = new ParserVal(s);
+                 }
 | ID '(' expresion ')'
   {
-       ArrayList<String> errores = new ArrayList<>();
-       String tArg = tipoDe($3);
-       String tFormal = tiposParFunct.get($1.sval);
+         ArrayList<String> errores = new ArrayList<>();
+         String tArg    = tipoDe($3);
+         String tFormal = tiposParFunct.get($1.sval);
 
-       ParserVal arg = $3;
+         ParserVal arg = $3;
 
-       if (tFormal == null) {
-           errores.add("func-undeclared");
-       } else if (isLong(tFormal) && isUInt(tArg)) {
+         if (tFormal == null) {
+             errores.add("func-undeclared");
+         } else if (isLong(tFormal) && isUInt(tArg)) {
+             arg = promoteToLong($3);
+         } else if (isUInt(tFormal) && isLong(tArg)) {
+             if (!isConstWithinUInt($3)) {
+                 errores.add("type missmatch");
+             }
+         } else if (tArg != null && !tArg.equalsIgnoreCase(tFormal)) {
+             errores.add("type missmatch");
+         }
 
-           arg = new ParserVal( crear_terceto("uitol", $3, new ParserVal("-")) );
-       } else if (isUInt(tFormal) && isLong(tArg)) {
+         String s = crear_terceto("exec", $1, arg, errores);
+         int i = decode(s);
+         String tret = tiposRetFunct.get($1.sval);
+         reglas.get(i).tipo = (tret != null) ? tret.toLowerCase() : null;
 
-           if (!isConstWithinUInt($3)) {
-               errores.add("type missmatch");
-           }
-
-       } else if (tArg != null && !tArg.equalsIgnoreCase(tFormal)) {
-           errores.add("type missmatch");
-       }
-
-       $$ = new ParserVal( crear_terceto("exec", $1, arg, errores) );
-   }
+         $$ = new ParserVal(s);
+     }
 ;
 
 
@@ -426,6 +461,7 @@ static Stack<String> pilaString = new Stack<>();
 static ArrayList<String> colaAmbito = new ArrayList<String>();
 static HashMap<String,String> tiposParFunct = new HashMap<>();
 static HashMap<String,String> tiposRetFunct = new HashMap<>();
+static Stack<String> pilaFun = new Stack<>();
 
 ar.tp.parser.ParserVal PV;
 

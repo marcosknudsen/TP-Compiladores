@@ -1,6 +1,6 @@
 main
 begin
-  c := 1;       // error: c no declarada (aún)
+  c := 1;
   uinteger c;
-  c := 2;       // ok
+  c := 2;
 end

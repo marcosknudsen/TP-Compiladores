@@ -10,7 +10,7 @@ begin
 
   longint fun f ()
   begin
-    uinteger a;        // ok: a.pp.f
+    uinteger a;
     return (a);
   end;
 end
