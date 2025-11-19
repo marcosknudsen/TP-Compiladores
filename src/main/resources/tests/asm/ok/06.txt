@@ -1,0 +1,9 @@
+main
+begin
+    uinteger a;
+    uinteger b;
+
+    a := 10;
+    b := 0;
+    a := a / b;
+end

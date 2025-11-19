@@ -607,7 +607,7 @@ void guardarVariable(String nombre, Symbol s){
     lex.symbols.put(getVariableName(nombre, 0), s);
 }
 
-static int decode(String str){
+public static int decode(String str){
     str = str.substring(1, str.length() - 1);
     return Integer.valueOf(str);
 }

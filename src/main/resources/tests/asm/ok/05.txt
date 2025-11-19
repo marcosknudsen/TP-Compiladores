@@ -1,0 +1,18 @@
+main
+begin
+    uinteger x;
+    longint  y;
+    longint  r;
+
+    longint fun f(uinteger p)
+    begin
+        longint res;
+        res := p;
+        return (res);
+    end;
+
+    x := 10;
+    y := -5;
+
+    r := f(y);
+end

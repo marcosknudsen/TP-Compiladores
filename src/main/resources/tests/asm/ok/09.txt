@@ -1,0 +1,12 @@
+main
+begin
+    uinteger a;
+
+    a := 3;
+
+    do
+    begin
+        a := a - 1;
+    end
+    while (a > 0);
+end

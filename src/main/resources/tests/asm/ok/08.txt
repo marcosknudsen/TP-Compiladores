@@ -1,0 +1,10 @@
+main
+begin
+    uinteger a;
+    uinteger b;
+    uinteger r;
+
+    a := 2;
+    b := 5;
+    r := a - b;
+end

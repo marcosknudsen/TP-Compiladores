@@ -1,0 +1,10 @@
+main
+begin
+    uinteger a;
+    longint  b;
+    longint  r;
+
+    a := 10;
+    b := -5;
+    r := a + b;
+end

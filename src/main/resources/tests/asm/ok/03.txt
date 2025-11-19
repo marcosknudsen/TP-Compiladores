@@ -1,0 +1,8 @@
+main
+begin
+    uinteger a;
+    longint  z;
+
+    a := 100;
+    z := a;
+end

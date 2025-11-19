@@ -1,5 +1,6 @@
 package ar.tp.app;
 
+import ar.tp.generacion.GeneradorAsm;
 import ar.tp.lexer.Lex;
 import ar.tp.parser.*;
 
@@ -13,14 +14,22 @@ public class Run {
             System.exit(1);
         }
 
-        Parser.setLexer(new Lex(args[0]));
+        Lex lexer = new Lex(args[0]);
+        Parser.setLexer(lexer);
 
         Parser p = new Parser(false);
         int rc = p.runParser();
-        mostrarReglas(p.reglas);
+
+        mostrarReglas(Parser.reglas);
         System.out.println();
         System.out.println("PILA:");
-        mostrarPila(p.pila);
+        mostrarPila(Parser.pila);
         System.out.println(rc == 0 ? "Parse OK" : "Parse con errores");
+
+        if (rc == 0) {
+            GeneradorAsm gen = new GeneradorAsm(Parser.reglas, lexer.symbols);
+            gen.generar("out.asm");
+            System.out.println("Assembler generado en out.asm");
+        }
     }
 }

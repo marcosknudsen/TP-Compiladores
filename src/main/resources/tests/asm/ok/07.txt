@@ -1,0 +1,10 @@
+main
+begin
+    uinteger a;
+    uinteger b;
+    uinteger r;
+
+    a := 50000;
+    b := 50000;
+    r := a * b;
+end
