@@ -1,5 +1,6 @@
 main
 begin
     uinteger a;
+
     a := 1 + 2;
 end

@@ -1,8 +1,15 @@
 main
 begin
     uinteger a;
-    longint  z;
+    longint  r;
 
-    z := -1;
-    a := z;
+    longint fun f(uinteger x)
+    begin
+        longint aux;
+        aux := x + 1;
+        return(aux);
+    end;
+
+    a := 10;
+    r := f(a);
 end

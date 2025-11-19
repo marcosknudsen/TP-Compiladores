@@ -1,0 +1,13 @@
+main
+begin
+    uinteger a;
+
+    uinteger fun h()
+    begin
+        longint z;
+        z := -1;
+        return(z);
+    end;
+
+    a := h();
+end

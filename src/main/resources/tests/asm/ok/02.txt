@@ -1,10 +1,8 @@
 main
 begin
     uinteger a;
-    longint  b;
-    longint  r;
+    longint  z;
 
     a := 10;
-    b := -5;
-    r := a + b;
+    z := a + 5;
 end

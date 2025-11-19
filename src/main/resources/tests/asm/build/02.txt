@@ -1,0 +1,13 @@
+main
+begin
+    uinteger a;
+    longint  z;
+
+    uinteger fun f(uinteger x)
+    begin
+        return(x);
+    end;
+
+    z := -1;
+    a := f(z);       // real longint, formal uinteger → error
+end

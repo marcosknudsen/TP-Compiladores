@@ -1,0 +1,8 @@
+main
+begin
+    uinteger a;
+    longint  z;
+
+    z := -1;
+    a := z;      // NO permitido: longint → uinteger
+end

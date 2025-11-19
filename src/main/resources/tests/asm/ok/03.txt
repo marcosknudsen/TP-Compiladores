@@ -1,8 +1,10 @@
 main
 begin
-    uinteger a;
+    uinteger a, b;
     longint  z;
 
     a := 100;
-    z := a;
+    b := 200;
+
+    z := a * b;
 end

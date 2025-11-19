@@ -1,0 +1,12 @@
+main
+begin
+    uinteger a;
+    uinteger x;
+
+    uinteger fun g()
+    begin
+        return(0);
+    end;
+
+    a := g(x);    // g no tiene parámetros → error
+end

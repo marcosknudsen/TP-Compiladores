@@ -1,0 +1,9 @@
+main
+begin
+    longint a, b;
+
+    a := 10;
+    b := 0;
+
+    a := a / b;    // división por cero
+end

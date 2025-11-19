@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class GeneradorAsm {
@@ -16,10 +17,39 @@ public class GeneradorAsm {
     private final StringBuilder data = new StringBuilder();
     private final StringBuilder code = new StringBuilder();
 
+    private final Map<String, Integer> funStart = new HashMap<>();
+    private final Map<String, Integer> funEnd   = new HashMap<>();
+    private final boolean[] esDeFuncion;
+
     public GeneradorAsm(ArrayList<Terceto> reglas, Map<String, Symbol> ts) {
         this.reglas = reglas;
         this.ts = ts;
+        this.esDeFuncion = new boolean[reglas.size()];
+
+        String funActual = null;
+        int begIdx = -1;
+
+        for (int i = 0; i < reglas.size(); i++) {
+            Terceto t = reglas.get(i);
+            if ("begfunct".equals(t.operand)) {
+                funActual = t.a.sval;   // "f"
+                begIdx = i;
+                funStart.put(funActual, i);
+            } else if ("endfun".equals(t.operand)) {
+                String f = t.a.sval;    // "f"
+                funEnd.put(f, i);
+
+                // marcar cuerpo [beg+1 .. end-1] como "de función"
+                for (int j = begIdx + 1; j < i; j++) {
+                    esDeFuncion[j] = true;
+                }
+
+                funActual = null;
+                begIdx = -1;
+            }
+        }
     }
+
 
     public void generar(String path) throws IOException {
         generarData();
@@ -49,13 +79,13 @@ public class GeneradorAsm {
     private boolean produceValor(Terceto t) {
         if (t == null) return false;
         return switch (t.operand) {
-            case "+", "-", "*", "/", ":=", "exec", "uitol" -> true;
+            case "+", "-", "*", "/", ":=", "exec", "uitol", "ret" -> true;
             default -> false;
         };
     }
 
     private String mangle(String tsName) {
-        return tsName.replace(':', '_');
+        return "_v_" + tsName.replace(':', '_');
     }
 
     private String tempName(int idx) {
@@ -70,20 +100,37 @@ public class GeneradorAsm {
 
         if (s.startsWith("[") && s.endsWith("]")) {
             int idx = ar.tp.parser.Parser.decode(s);
-            code.append("    mov ").append(reg)
-                    .append(", ").append(tempName(idx)).append("\n");
+            code.append("    mov ")
+                    .append(reg)
+                    .append(", ")
+                    .append(tempName(idx))
+                    .append("\n");
             return;
         }
 
         Symbol sym = ts.get(s);
         if (sym != null) {
-            code.append("    mov ").append(reg)
-                    .append(", ").append(mangle(s)).append("\n");
+            if (esConstante(sym)) {
+                code.append("    mov ")
+                        .append(reg)
+                        .append(", ")
+                        .append(s)
+                        .append("\n");
+            } else {
+                code.append("    mov ")
+                        .append(reg)
+                        .append(", ")
+                        .append(mangle(s))
+                        .append("\n");
+            }
             return;
         }
 
-        code.append("    mov ").append(reg)
-                .append(", ").append(s).append("\n");
+        code.append("    mov ")
+                .append(reg)
+                .append(", ")
+                .append(s)
+                .append("\n");
     }
 
     private void generarData() {
@@ -132,9 +179,9 @@ public class GeneradorAsm {
 
         for (int i = 0; i < reglas.size(); i++) {
             Terceto t = reglas.get(i);
+            if (esDeFuncion[i]) continue;
             traducirTerceto(i, t);
         }
-
         code.append("    ; fin de programa\n");
         code.append("    ret\n");
 
@@ -145,8 +192,6 @@ public class GeneradorAsm {
 
 
     private void traducirTerceto(int idx, Terceto t) {
-        // System.out.println("ASM terceto ["+idx+"]: " + t.operand + " " + t.a.sval + " , " + t.b.sval);
-
         switch (t.operand) {
             case ":=" -> genAsignacion(idx, t);
             case "+"  -> genSuma(idx, t);
@@ -154,12 +199,25 @@ public class GeneradorAsm {
             case "*"  -> genProducto(idx, t);
             case "/"  -> genDivision(idx, t);
             case "uitol" -> genUitol(idx, t);
+            case "exec" -> genExec(idx, t);
+            case "ret"   -> genRet(idx, t);
 
             default -> {
-                // System.out.println("IGNORADO EN ASM ["+idx+"]: " + t.operand);
+                System.out.println("IGNORADO EN ASM ["+idx+"]: " + t.operand);
             }
         }
     }
+
+    private void genRet(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] ret\n");
+
+        cargarEn("eax", t.a);
+
+        code.append("    mov ")
+                .append(tempName(idx))
+                .append(", eax\n");
+    }
+
 
     private void generarRutinasError() {
         code.append("_ERR_DIV_ZERO:\n");
@@ -247,5 +305,54 @@ public class GeneradorAsm {
         code.append("    ; [").append(idx).append("] uitol\n");
         cargarEn("eax", t.a);
         code.append("    mov ").append(tempName(idx)).append(", eax\n");
+    }
+
+    private void genExec(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] exec\n");
+
+        String fun = t.a.sval;
+
+        cargarEn("eax", t.b);
+        String paramKey = null;
+        for (String key : ts.keySet()) {
+            if (key.startsWith(fun + ":")) {
+                paramKey = key;
+                break;
+            }
+        }
+        if (paramKey != null) {
+            code.append("    mov ")
+                    .append(mangle(paramKey))
+                    .append(", eax\n");
+        }
+
+        Integer ini = funStart.get(fun);
+        Integer fin = funEnd.get(fun);
+        if (ini != null && fin != null) {
+            for (int j = ini + 1; j < fin; j++) {
+                Terceto cuerpo = reglas.get(j);
+
+                if ("decl".equals(cuerpo.operand)) continue;
+
+                traducirTerceto(j, cuerpo);
+            }
+        }
+
+        int retIdx = -1;
+        for (int j = ini + 1; j < fin; j++) {
+            Terceto cuerpo = reglas.get(j);
+            if ("ret".equals(cuerpo.operand)) {
+                retIdx = j;
+                break;
+            }
+        }
+        if (retIdx != -1) {
+            code.append("    mov eax, ")
+                    .append(tempName(retIdx))
+                    .append("\n");
+            code.append("    mov ")
+                    .append(tempName(idx))
+                    .append(", eax\n");
+        }
     }
 }

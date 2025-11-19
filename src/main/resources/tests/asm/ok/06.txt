@@ -1,9 +1,8 @@
 main
 begin
-    uinteger a;
-    uinteger b;
+    uinteger a, b, c;
 
     a := 10;
-    b := 0;
-    a := a / b;
+    b := 3;
+    c := a - b;
 end

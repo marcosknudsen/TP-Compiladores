@@ -1,18 +1,14 @@
 main
 begin
-    uinteger x;
-    longint  y;
-    longint  r;
+    uinteger i;
+    longint  limite;
 
-    longint fun f(uinteger p)
+    i := 0;
+    limite := 3;
+
+    do
     begin
-        longint res;
-        res := p;
-        return (res);
-    end;
-
-    x := 10;
-    y := -5;
-
-    r := f(y);
+        i := i + 1;
+    end
+    while( i < limite );
 end
