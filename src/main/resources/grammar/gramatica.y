@@ -478,7 +478,28 @@ public int runParser() {
     tiposRetFunct.clear();
     lex.symbols.clear();
 
-    return yyparse();
+    int rc = yyparse();
+
+    boolean hayErrores = false;
+
+    for (int i = 0; i < reglas.size(); i++) {
+        Terceto t = reglas.get(i);
+        if (t.errors != null && !t.errors.isEmpty()) {
+            hayErrores = true;
+
+            System.out.println(
+                "SEMANTIC ERROR in [" + i + "] " +
+                t.toString() + " -> " + t.errors
+            );
+        }
+    }
+
+    if (hayErrores) {
+        System.out.println("COMPILATION FAILED: semantic errors detected.");
+        return 1;
+    }
+
+    return rc;
 }
 
 public static void setLexer(Lex l) {
