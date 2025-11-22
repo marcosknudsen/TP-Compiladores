@@ -20,11 +20,13 @@ public class GeneradorAsm {
     private final Map<String, Integer> funStart = new HashMap<>();
     private final Map<String, Integer> funEnd   = new HashMap<>();
     private final boolean[] esDeFuncion;
+    private final boolean[] esLabel;
 
     public GeneradorAsm(ArrayList<Terceto> reglas, Map<String, Symbol> ts) {
         this.reglas = reglas;
         this.ts = ts;
         this.esDeFuncion = new boolean[reglas.size()];
+        this.esLabel = new boolean[reglas.size() + 1];
 
         String funActual = null;
         int begIdx = -1;
@@ -32,11 +34,11 @@ public class GeneradorAsm {
         for (int i = 0; i < reglas.size(); i++) {
             Terceto t = reglas.get(i);
             if ("begfunct".equals(t.operand)) {
-                funActual = t.a.sval;   // "f"
+                funActual = t.a.sval;
                 begIdx = i;
                 funStart.put(funActual, i);
             } else if ("endfun".equals(t.operand)) {
-                String f = t.a.sval;    // "f"
+                String f = t.a.sval;
                 funEnd.put(f, i);
 
                 // marcar cuerpo [beg+1 .. end-1] como "de función"
@@ -46,6 +48,25 @@ public class GeneradorAsm {
 
                 funActual = null;
                 begIdx = -1;
+            }
+        }
+
+        for (int i = 0; i < reglas.size(); i++) {
+            Terceto t = reglas.get(i);
+            if ("BF".equals(t.operand)) {
+                if (t.b != null && t.b.sval != null) {
+                    int dest = ar.tp.parser.Parser.decode(t.b.sval); // p.ej "[10]"
+                    if (dest >= 0 && dest < esLabel.length) {
+                        esLabel[dest] = true;
+                    }
+                }
+            } else if ("BI".equals(t.operand)) {
+                if (t.a != null && t.a.sval != null) {
+                    int dest = ar.tp.parser.Parser.decode(t.a.sval); // p.ej "[5]"
+                    if (dest >= 0 && dest < esLabel.length) {
+                        esLabel[dest] = true;
+                    }
+                }
             }
         }
     }
@@ -180,8 +201,18 @@ public class GeneradorAsm {
         for (int i = 0; i < reglas.size(); i++) {
             Terceto t = reglas.get(i);
             if (esDeFuncion[i]) continue;
+
+            if (esLabel[i]) {
+                code.append(labelName(i)).append(":\n");
+            }
+
             traducirTerceto(i, t);
         }
+
+        if (esLabel[reglas.size()]) {
+            code.append(labelName(reglas.size())).append(":\n");
+        }
+
         code.append("    ; fin de programa\n");
         code.append("    ret\n");
 
@@ -201,6 +232,9 @@ public class GeneradorAsm {
             case "uitol" -> genUitol(idx, t);
             case "exec" -> genExec(idx, t);
             case "ret"   -> genRet(idx, t);
+            case "<", ">", "<=", ">=", "==", "!=" -> genComparacion(idx, t);
+            case "BF" -> genBF(idx, t);
+            case "BI" -> genBI(idx, t);
 
             default -> {
                 System.out.println("IGNORADO EN ASM ["+idx+"]: " + t.operand);
@@ -334,6 +368,10 @@ public class GeneradorAsm {
 
                 if ("decl".equals(cuerpo.operand)) continue;
 
+                if (esLabel[j]) {
+                    code.append(labelName(j)).append(":\n");
+                }
+
                 traducirTerceto(j, cuerpo);
             }
         }
@@ -354,5 +392,54 @@ public class GeneradorAsm {
                     .append(tempName(idx))
                     .append(", eax\n");
         }
+    }
+
+    private String labelName(int idx) {
+        return "L" + idx;
+    }
+
+    private void genComparacion(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] ").append(t.operand).append("\n");
+        cargarEn("eax", t.a);
+        cargarEn("ebx", t.b);
+        code.append("    cmp eax, ebx\n");
+    }
+
+    private void genBF(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] BF\n");
+
+        int condIdx = ar.tp.parser.Parser.decode(t.a.sval);
+        Terceto cond = reglas.get(condIdx);
+
+        int dest = ar.tp.parser.Parser.decode(t.b.sval);
+
+        String op = cond.operand;
+        String jmpFalse;
+
+        switch (op) {
+            case "<"  -> jmpFalse = "jge";
+            case ">"  -> jmpFalse = "jle";
+            case "<=" -> jmpFalse = "jg";
+            case ">=" -> jmpFalse = "jl";
+            case "==" -> jmpFalse = "jne";
+            case "!=" -> jmpFalse = "je";
+            default   -> jmpFalse = "je";
+        }
+
+        code.append("    ")
+                .append(jmpFalse)
+                .append(" ")
+                .append(labelName(dest))
+                .append("\n");
+    }
+
+    private void genBI(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] BI\n");
+
+        int dest = ar.tp.parser.Parser.decode(t.a.sval);
+
+        code.append("    jmp ")
+                .append(labelName(dest))
+                .append("\n");
     }
 }

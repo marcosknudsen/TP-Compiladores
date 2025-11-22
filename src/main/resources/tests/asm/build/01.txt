@@ -4,5 +4,5 @@ begin
     longint  z;
 
     z := -1;
-    a := z;      // NO permitido: longint → uinteger
+    a := z;      */ NO permitido: longint → uinteger /*
 end

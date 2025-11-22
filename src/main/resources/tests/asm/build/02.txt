@@ -9,5 +9,5 @@ begin
     end;
 
     z := -1;
-    a := f(z);       // real longint, formal uinteger → error
+    a := f(z);       */ real longint, formal uinteger → error /*
 end

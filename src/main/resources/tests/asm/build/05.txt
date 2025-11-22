@@ -1,5 +1,5 @@
 main
 begin
     uinteger a, b;
-    uinteger a;   // redeclaración en el mismo ámbito
+    uinteger a;   */ redeclaración en el mismo ámbito /*
 end

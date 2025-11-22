@@ -206,11 +206,15 @@ asignacion: ID ASSIGN expresion
     ParserVal rhs = $3;
     ArrayList<String> errores = new ArrayList<>();
 
-    if (isLong(tL) && isUInt(tR)) {
-        rhs = promoteToLong($3);
-    }
-    else if (isUInt(tL) && isLong(tR)) {
-        errores.add("type mismatch");
+    if (tL == null) {
+        errores.add("undeclared");
+    } else {
+        if (isLong(tL) && isUInt(tR)) {
+            rhs = promoteToLong($3);
+        }
+        else if (isUInt(tL) && isLong(tR)) {
+            errores.add("type mismatch");
+        }
     }
 
     $$ = new ParserVal(crear_terceto(":=", new ParserVal(lhs), rhs, errores));

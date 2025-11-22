@@ -5,5 +5,5 @@ begin
     a := 1;
     b := 2;
 
-    c := a - b;    // resultado negativo → error en runtime
+    c := a - b;    */ resultado negativo → error en runtime /*
 end

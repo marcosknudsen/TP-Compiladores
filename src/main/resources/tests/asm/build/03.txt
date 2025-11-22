@@ -8,5 +8,5 @@ begin
         return(0);
     end;
 
-    a := g(x);    // g no tiene parámetros → error
+    a := g(x);    */ g no tiene parámetros → error /*
 end
