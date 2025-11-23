@@ -407,7 +407,26 @@ termino  : factor
 factor
   : ID { $$ = new ParserVal(getVisibleVariableName($1.sval)); }
   | CTE
-  | '-' CTE
+  | '-' CTE {
+                    // lexema de la constante positiva (por ej. "1")
+                    String litPos = $2.sval;
+
+                    // construir el lexema negativo "-1"
+                    String litNeg = "-" + litPos;
+
+                    // Buscar el símbolo de la constante positiva
+                    Symbol sPos = lex.symbols.get(litPos);
+                    String tipoConst = (sPos != null) ? sPos.tipo : "longint";
+
+                    // Registrar la constante negativa en la TS si no existe
+                    Symbol sNeg = lex.symbols.get(litNeg);
+                    if (sNeg == null) {
+                        lex.symbols.put(litNeg, new Symbol(tipoConst, "cte"));
+                    }
+
+                    // Ahora el valor semántico de la expresión es la constante negativa
+                    $$ = new ParserVal(litNeg);
+                }
   | invocacion
   ;
 
