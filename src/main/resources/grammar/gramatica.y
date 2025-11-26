@@ -417,20 +417,16 @@ factor
   : ID { $$ = new ParserVal(getVisibleVariableName($1.sval)); }
   | CTE
   | '-' CTE {
-                    String litPos = $2.sval;
+        String litPos = $2.sval;
+        String litNeg = "-" + litPos;
 
-                    String litNeg = "-" + litPos;
+        Symbol sNeg = lex.symbols.get(litNeg);
+        if (sNeg == null) {
+            lex.symbols.put(litNeg, new Symbol("longint", "cte"));
+        }
 
-                    Symbol sPos = lex.symbols.get(litPos);
-                    String tipoConst = (sPos != null) ? sPos.tipo : "longint";
-
-                    Symbol sNeg = lex.symbols.get(litNeg);
-                    if (sNeg == null) {
-                        lex.symbols.put(litNeg, new Symbol(tipoConst, "cte"));
-                    }
-
-                    $$ = new ParserVal(litNeg);
-                }
+        $$ = new ParserVal(litNeg);
+    }
   | invocacion
   ;
 

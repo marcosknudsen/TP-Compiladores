@@ -14,5 +14,5 @@ begin
     end;
 
     z := -1;
-    a := g(z);    */ z es longint, g espera uinteger */
+    a := g(z);    */ z es longint, g espera uinteger /*
 end
