@@ -245,7 +245,11 @@ declaracion: tipodato FUN identificadorfunct '(' parametro ')'
 bloquefunct
 {
     ArrayList<String> errores = new ArrayList<>();
-    if (buscarVariable($3.sval) != null) errores.add("declared");
+
+    Symbol sExistente = buscarVariable($3.sval);
+    if (sExistente != null && sExistente.uso != null && !sExistente.uso.isEmpty()) {
+        errores.add("declared");
+    }
 
     $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
@@ -267,7 +271,11 @@ bloquefunct
      }
      bloquefunct  {
                       ArrayList<String> errores = new ArrayList<>();
-                      if (buscarVariable($3.sval) != null) errores.add("declared");
+
+                      Symbol sExistente = buscarVariable($3.sval);
+                      if (sExistente != null && sExistente.uso != null && !sExistente.uso.isEmpty()) {
+                          errores.add("declared");
+                      }
 
                       $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
@@ -587,12 +595,14 @@ static void mostrarTS(){
 }
 
 Symbol buscarVariable(String nombre){
-    Symbol variable;
-    int N=0;
-    do {
-        variable=lex.symbols.get(getVariableName(nombre,N++));
-    } while (variable == null && N < colaAmbito.size());
-    return variable;
+    for (int n = 0; n <= colaAmbito.size(); n++) {
+        String key = getVariableName(nombre, n);
+        Symbol variable = lex.symbols.get(key);
+        if (variable != null) {
+            return variable;
+        }
+    }
+    return null;
 }
 
 static String getVisibleVariableName(String nombre){
