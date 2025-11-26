@@ -1,0 +1,16 @@
+main
+begin
+    uinteger a;
+
+    uinteger fun f()
+    begin
+        return(0);
+    end;
+
+    uinteger fun f()
+    begin
+        return(1);
+    end;
+
+    a := f();
+end

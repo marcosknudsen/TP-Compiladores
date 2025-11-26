@@ -1,0 +1,9 @@
+main
+begin
+    longint a, b, c;
+
+    a := 50000;
+    b := 50000;
+
+    c := a * b;    */ overflow longint → _ERR_OVERFLOW_MUL /*
+end

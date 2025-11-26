@@ -1,0 +1,16 @@
+main
+begin
+    uinteger a, b, c;
+
+    a := 1;
+    b := 2;
+    c := 0;
+
+    if (a < b) then
+        if (b < 10) then
+            c := 1;
+        end_if;
+    else
+        c := 2;
+    end_if;
+end

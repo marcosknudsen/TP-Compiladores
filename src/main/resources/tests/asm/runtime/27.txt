@@ -1,0 +1,11 @@
+main
+begin
+    uinteger a;
+
+    uinteger fun h()
+    begin
+        return(-1);    */ constante negativa, no cabe en uinteger */
+    end;
+
+    a := h();
+end

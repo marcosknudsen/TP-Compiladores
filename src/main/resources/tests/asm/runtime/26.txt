@@ -1,0 +1,18 @@
+main
+begin
+    uinteger a;
+    longint  z;
+
+    uinteger fun f(uinteger x)
+    begin
+        return(x);
+    end;
+
+    uinteger fun g(uinteger k)
+    begin
+        return(f(k));
+    end;
+
+    z := -1;
+    a := g(z);    */ z es longint, g espera uinteger */
+end

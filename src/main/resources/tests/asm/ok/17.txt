@@ -1,0 +1,14 @@
+main
+begin
+    uinteger u;
+    longint  l, r;
+
+    uinteger fun g(uinteger x)
+    begin
+        return(x + 1);
+    end;
+
+    u := 10;
+    l := -5;
+    r := l + g(u);    */ longint + uinteger → promoción de g(u) /*
+end

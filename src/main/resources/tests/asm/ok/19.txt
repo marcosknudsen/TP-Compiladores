@@ -1,0 +1,14 @@
+main
+begin
+    uinteger i;
+    longint  limite;
+
+    i := 0;
+    limite := 3;
+
+    do
+    begin
+        i := i + 1;
+    end
+    while (i < limite);
+end

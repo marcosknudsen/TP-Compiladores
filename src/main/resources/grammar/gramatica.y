@@ -60,6 +60,7 @@ cuerpo:
   | print ';'
   | iteracion ';'
   | retorno ';'
+  | seleccion ';'
   ;
 
 
@@ -408,23 +409,18 @@ factor
   : ID { $$ = new ParserVal(getVisibleVariableName($1.sval)); }
   | CTE
   | '-' CTE {
-                    // lexema de la constante positiva (por ej. "1")
                     String litPos = $2.sval;
 
-                    // construir el lexema negativo "-1"
                     String litNeg = "-" + litPos;
 
-                    // Buscar el símbolo de la constante positiva
                     Symbol sPos = lex.symbols.get(litPos);
                     String tipoConst = (sPos != null) ? sPos.tipo : "longint";
 
-                    // Registrar la constante negativa en la TS si no existe
                     Symbol sNeg = lex.symbols.get(litNeg);
                     if (sNeg == null) {
                         lex.symbols.put(litNeg, new Symbol(tipoConst, "cte"));
                     }
 
-                    // Ahora el valor semántico de la expresión es la constante negativa
                     $$ = new ParserVal(litNeg);
                 }
   | invocacion
@@ -652,9 +648,13 @@ void guardarVariable(String nombre, Symbol s){
 }
 
 public static int decode(String str){
+    if (str == null || str.length() < 3 || str.charAt(0) != '[' || str.charAt(str.length()-1) != ']') {
+        throw new IllegalArgumentException("decode: formato invalido: " + str);
+    }
     str = str.substring(1, str.length() - 1);
     return Integer.valueOf(str);
 }
+
 
 boolean declaradoEnEsteAmbito(String nombre) {
     String key = getVariableName(nombre, 0);

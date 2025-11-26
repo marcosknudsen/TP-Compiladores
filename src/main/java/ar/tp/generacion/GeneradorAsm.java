@@ -61,8 +61,16 @@ public class GeneradorAsm {
                     }
                 }
             } else if ("BI".equals(t.operand)) {
-                if (t.a != null && t.a.sval != null) {
-                    int dest = ar.tp.parser.Parser.decode(t.a.sval); // p.ej "[5]"
+                String target = null;
+
+                if (t.a != null && t.a.sval != null && t.a.sval.startsWith("[") && t.a.sval.endsWith("]")) {
+                    target = t.a.sval;
+                } else if (t.b != null && t.b.sval != null && t.b.sval.startsWith("[") && t.b.sval.endsWith("]")) {
+                    target = t.b.sval;
+                }
+
+                if (target != null) {
+                    int dest = ar.tp.parser.Parser.decode(target);
                     if (dest >= 0 && dest < esLabel.length) {
                         esLabel[dest] = true;
                     }
@@ -436,10 +444,24 @@ public class GeneradorAsm {
     private void genBI(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] BI\n");
 
-        int dest = ar.tp.parser.Parser.decode(t.a.sval);
+        String target = null;
+
+        if (t.a != null && t.a.sval != null && t.a.sval.startsWith("[") && t.a.sval.endsWith("]")) {
+            target = t.a.sval;
+        } else if (t.b != null && t.b.sval != null && t.b.sval.startsWith("[") && t.b.sval.endsWith("]")) {
+            target = t.b.sval;
+        }
+
+        if (target == null) {
+            // System.out.println("WARN: BI sin destino válido en [" + idx + "]");
+            return;
+        }
+
+        int dest = ar.tp.parser.Parser.decode(target);
 
         code.append("    jmp ")
                 .append(labelName(dest))
                 .append("\n");
     }
+
 }

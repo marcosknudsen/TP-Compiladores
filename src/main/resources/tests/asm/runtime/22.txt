@@ -1,0 +1,8 @@
+main
+begin
+    uinteger a, b, c;
+
+    a := 3;
+    b := 5;
+    c := a - b;    */ resta negativa de uinteger /*
+end

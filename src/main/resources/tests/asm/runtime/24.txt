@@ -1,0 +1,7 @@
+main
+begin
+    uinteger a;
+
+    a := 1;
+    a := f(a);    */ f no declarada */
+end

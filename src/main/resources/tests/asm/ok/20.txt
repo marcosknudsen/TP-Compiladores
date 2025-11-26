@@ -1,0 +1,16 @@
+main
+begin
+    uinteger a;
+
+    uinteger fun inc(uinteger x)
+    begin
+        return(x + 1);
+    end;
+
+    uinteger fun twice(uinteger y)
+    begin
+        return(inc(inc(y)));
+    end;
+
+    a := twice(5);
+end
