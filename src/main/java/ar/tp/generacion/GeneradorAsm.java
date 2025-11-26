@@ -21,6 +21,7 @@ public class GeneradorAsm {
     private final Map<String, Integer> funEnd   = new HashMap<>();
     private final boolean[] esDeFuncion;
     private final boolean[] esLabel;
+    private final Map<String, String> printLabels = new HashMap<>();
 
     public GeneradorAsm(ArrayList<Terceto> reglas, Map<String, Symbol> ts) {
         this.reglas = reglas;
@@ -74,6 +75,18 @@ public class GeneradorAsm {
                     if (dest >= 0 && dest < esLabel.length) {
                         esLabel[dest] = true;
                     }
+                }
+            }
+        }
+
+        int printCount = 0;
+
+        for (Terceto t : reglas) {
+            if ("print".equals(t.operand) && t.a != null && t.a.sval != null) {
+                String lit = t.a.sval; // ejemplo: "hola mundo"
+                if (!printLabels.containsKey(lit)) {
+                    String label = "msg_print_" + printCount++;
+                    printLabels.put(lit, label);
                 }
             }
         }
@@ -197,6 +210,17 @@ public class GeneradorAsm {
             }
         }
 
+        for (Map.Entry<String, String> e : printLabels.entrySet()) {
+            String lit = e.getKey();     // ej: "hola mundo"
+            String label = e.getValue(); // ej: msg_print_0
+
+            data.append("    ")
+                    .append(label)
+                    .append(" db ")
+                    .append(lit)  // ya viene con comillas desde la gramática
+                    .append(", 0\n");
+        }
+
         data.append("    msg_div_zero db \"Error: division por cero\", 0\n");
         data.append("    msg_overflow_mul db \"Error: overflow en multiplicacion\", 0\n");
         data.append("    msg_neg_uint db \"Error: resta negativa de uinteger\", 0\n");
@@ -239,6 +263,7 @@ public class GeneradorAsm {
             case "/"  -> genDivision(idx, t);
             case "uitol" -> genUitol(idx, t);
             case "exec" -> genExec(idx, t);
+            case "print" -> genPrint(idx, t);
             case "ret"   -> genRet(idx, t);
             case "<", ">", "<=", ">=", "==", "!=" -> genComparacion(idx, t);
             case "BF" -> genBF(idx, t);
@@ -462,6 +487,26 @@ public class GeneradorAsm {
         code.append("    jmp ")
                 .append(labelName(dest))
                 .append("\n");
+    }
+
+    private void genPrint(int idx, Terceto t) {
+        code.append("    ; [").append(idx).append("] print\n");
+
+        if (t.a == null || t.a.sval == null) {
+            return;
+        }
+
+        String lit = t.a.sval;
+        String label = printLabels.get(lit);
+        if (label == null) {
+            return;
+        }
+
+        code.append("    push 0\n");
+        code.append("    push OFFSET ").append(label).append("\n");
+        code.append("    push OFFSET ").append(label).append("\n");
+        code.append("    push 0\n");
+        code.append("    call MessageBoxA\n");
     }
 
 }
