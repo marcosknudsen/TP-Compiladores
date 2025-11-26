@@ -42,7 +42,6 @@ public class GeneradorAsm {
                 String f = t.a.sval;
                 funEnd.put(f, i);
 
-                // marcar cuerpo [beg+1 .. end-1] como "de función"
                 for (int j = begIdx + 1; j < i; j++) {
                     esDeFuncion[j] = true;
                 }
@@ -56,7 +55,7 @@ public class GeneradorAsm {
             Terceto t = reglas.get(i);
             if ("BF".equals(t.operand)) {
                 if (t.b != null && t.b.sval != null) {
-                    int dest = ar.tp.parser.Parser.decode(t.b.sval); // p.ej "[10]"
+                    int dest = ar.tp.parser.Parser.decode(t.b.sval);
                     if (dest >= 0 && dest < esLabel.length) {
                         esLabel[dest] = true;
                     }
@@ -83,7 +82,7 @@ public class GeneradorAsm {
 
         for (Terceto t : reglas) {
             if ("print".equals(t.operand) && t.a != null && t.a.sval != null) {
-                String lit = t.a.sval; // ejemplo: "hola mundo"
+                String lit = t.a.sval;
                 if (!printLabels.containsKey(lit)) {
                     String label = "msg_print_" + printCount++;
                     printLabels.put(lit, label);
@@ -211,13 +210,13 @@ public class GeneradorAsm {
         }
 
         for (Map.Entry<String, String> e : printLabels.entrySet()) {
-            String lit = e.getKey();     // ej: "hola mundo"
-            String label = e.getValue(); // ej: msg_print_0
+            String lit = e.getKey();
+            String label = e.getValue();
 
             data.append("    ")
                     .append(label)
                     .append(" db ")
-                    .append(lit)  // ya viene con comillas desde la gramática
+                    .append(lit)
                     .append(", 0\n");
         }
 
