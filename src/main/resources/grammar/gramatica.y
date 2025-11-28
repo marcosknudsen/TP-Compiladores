@@ -571,7 +571,7 @@ public static int mostrarPila(Stack<Integer> pila){
 }
 
 public static int mostrarReglas(ArrayList<Terceto> reglas){
-    if (reglas.size() == 0){
+    if (reglas.isEmpty()){
         System.out.println("No hay reglas");
     }
     else{
