@@ -582,7 +582,8 @@ public static int mostrarReglas(ArrayList<Terceto> reglas){
     return 0;
 }
 
-static void mostrarTS(){
+public static void mostrarTS(){
+    System.out.println("TABLA DE SIMBOLOS");
     for (String name: lex.symbols.keySet()) {
         String key = name.toString();
         String value = lex.symbols.get(name).toString();
