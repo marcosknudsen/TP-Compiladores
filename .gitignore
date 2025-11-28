@@ -14,3 +14,7 @@ eclipse-formatter.xml
 Thumbs.db
 /tmp/
 /*.swp
+yacc.oa*
+*.asm
+Parser.java
+ParserVal.java
