@@ -158,15 +158,13 @@ condicion: expresion '>' expresion  {$$ = new ParserVal(crear_terceto(">", $1, $
 
 parametro: tipodato ID
 {
-   String nombreMng = getVariableName($2.sval, 0);
+    String nombreMng = getVariableName($2.sval, 0);
 
-   guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
+    guardarVariable($2.sval, new Symbol($1.sval, "parametro"));
 
-   crear_terceto("decl", $1, new ParserVal(nombreMng));
+    $$ = new ParserVal(nombreMng);
 
-   $$ = new ParserVal(nombreMng);
-
-   pilaString.push($1.sval);
+    pilaString.push($1.sval);
 }
     | ID {System.out.println("ERROR on line "+lex.line+": datatype expected");}
     | tipodato {System.out.println("ERROR on line "+lex.line+": identifier expected");}
@@ -289,9 +287,9 @@ bloquefunct
                       }
                       pilaFun.pop();
                   }
-| tipodato listavariables ';' {
+| tipodato listavariables ';'
+{
   for (String nombre : variables) {
-      ArrayList<String> errores = new ArrayList<>();
 
       String key = getVariableName(nombre, 0);
       Symbol s = lex.symbols.get(key);
@@ -301,17 +299,15 @@ bloquefunct
           s = null;
       }
 
-      boolean existeEnEsteAmbito = (s != null) &&
-                                   (s.uso != null && !s.uso.isEmpty());
+      boolean existeEnEsteAmbito =
+          (s != null) && (s.uso != null && !s.uso.isEmpty());
 
       if (existeEnEsteAmbito) {
-          errores.add("declared");
-      }
-
-      String nombreMng = getVariableName(nombre, 0);
-      crear_terceto("decl", $1, new ParserVal(nombreMng), errores);
-
-      if (!existeEnEsteAmbito) {
+          System.out.println(
+              "SEMANTIC ERROR: variable '" + nombre +
+              "' redeclared in current scope (line " + lex.line + ")"
+          );
+      } else {
           guardarVariable(nombre, new Symbol($1.sval, "Var"));
       }
   }
