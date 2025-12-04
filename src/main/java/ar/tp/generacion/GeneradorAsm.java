@@ -180,13 +180,12 @@ public class GeneradorAsm {
         data.append(".model flat, stdcall\n");
         data.append("option casemap:none\n\n");
 
-        data.append("include K:\\masm32\\include\\windows.inc\n");
-        data.append("include K:\\masm32\\include\\kernel32.inc\n");
-        data.append("include K:\\masm32\\include\\user32.inc\n\n");
+        data.append("include \\masm32\\include\\windows.inc\n");
+        data.append("include \\masm32\\include\\kernel32.inc\n");
+        data.append("include \\masm32\\include\\user32.inc\n");
 
-        data.append("includelib K:\\masm32\\lib\\kernel32.lib\n");
-        data.append("includelib K:\\masm32\\lib\\user32.lib\n\n");
-
+        data.append("includelib \\masm32\\lib\\kernel32.lib\n");
+        data.append("includelib \\masm32\\lib\\user32.lib\n");
         data.append(".data\n");
 
         for (Map.Entry<String, Symbol> e : ts.entrySet()) {
@@ -227,7 +226,7 @@ public class GeneradorAsm {
 
     private void generarCodigo() {
         code.append(".code\n");
-        code.append("main PROC\n");
+        code.append("start:\n");
 
         for (int i = 0; i < reglas.size(); i++) {
             Terceto t = reglas.get(i);
@@ -245,9 +244,9 @@ public class GeneradorAsm {
         }
 
         code.append("    ; fin de programa\n");
-        code.append("    ret\n");
+        code.append("invoke ExitProcess, 0\n");
 
-        code.append("main ENDP\n\n");
+        code.append("end start\n\n");
 
         generarRutinasError();
     }
