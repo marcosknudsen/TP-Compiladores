@@ -323,7 +323,30 @@ public class GeneradorAsm {
     private void genRet(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] ret\n");
 
-        cargarEn("eax", t.a);
+        String funName = null;
+        for (Map.Entry<String, Integer> e : funStart.entrySet()) {
+            String f = e.getKey();
+            Integer ini = e.getValue();
+            Integer fin = funEnd.get(f);
+            if (ini == null || fin == null) continue;
+
+            if (idx > ini && idx < fin) {
+                funName = f;
+                break;
+            }
+        }
+
+        boolean isUInt = false;
+        if (funName != null) {
+            Symbol funSym = ts.get(funName);
+            if (funSym != null && isUIntType(funSym.tipo)) {
+                isUInt = true;
+            }
+        }
+
+        String reg = isUInt ? "ax" : "eax";
+
+        cargarEn(reg, t.a);
 
         code.append("    ret\n");
     }
@@ -503,16 +526,28 @@ public class GeneradorAsm {
     private void genComparacion(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] ").append(t.operand).append("\n");
 
-        String tipoA = tipoDeOperand(t.a);
-        String tipoB = tipoDeOperand(t.b);
-        boolean isUInt = isUIntType(tipoA) || isUIntType(tipoB);
+        String ta = tipoDeOperand(t.a);
+        String tb = tipoDeOperand(t.b);
 
-        String ra = isUInt ? "ax"  : "eax";
-        String rb = isUInt ? "bx"  : "ebx";
+        boolean useLong =
+                "longint".equalsIgnoreCase(ta) ||
+                        "longint".equalsIgnoreCase(tb);
 
-        cargarEn(ra, t.a);
-        cargarEn(rb, t.b);
-        code.append("    cmp ").append(ra).append(", ").append(rb).append("\n");
+        if (useLong) {
+            if (isUIntType(ta)) {
+                cargarEn("ax", t.a);
+                code.append("    movzx eax, ax\n");
+            } else {
+                cargarEn("eax", t.a);
+            }
+
+            cargarEn("ebx", t.b);
+            code.append("    cmp eax, ebx\n");
+        } else {
+            cargarEn("ax", t.a);
+            cargarEn("bx", t.b);
+            code.append("    cmp ax, bx\n");
+        }
     }
 
     private void genBF(int idx, Terceto t) {
@@ -526,7 +561,9 @@ public class GeneradorAsm {
 
         String tLeft  = tipoDeOperand(cond.a);
         String tRight = tipoDeOperand(cond.b);
-        boolean isUInt = isUIntType(tLeft) || isUIntType(tRight);
+        boolean leftIsUInt  = isUIntType(tLeft);
+        boolean rightIsUInt = isUIntType(tRight);
+        boolean isUInt = leftIsUInt && rightIsUInt;
 
         String jmpFalse;
 
