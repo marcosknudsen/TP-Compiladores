@@ -1,0 +1,8 @@
+main
+begin
+    uinteger a;
+    longint b;
+    longint c;
+
+    c := a + b;
+end

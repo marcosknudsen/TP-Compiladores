@@ -1,0 +1,10 @@
+main
+begin
+    longint fun f()
+    begin
+        return(10);
+    end;
+
+    longint a;
+    a := f();
+end

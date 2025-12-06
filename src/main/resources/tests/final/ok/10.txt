@@ -1,0 +1,7 @@
+main
+begin
+    uinteger a;
+    uinteger b;
+    a := 5;
+    b := a * 2;
+end

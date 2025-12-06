@@ -1,0 +1,9 @@
+main
+begin
+    uinteger a;
+    a := 5;
+
+    if (a < 10) then
+        print("menor");
+    end_if;
+end

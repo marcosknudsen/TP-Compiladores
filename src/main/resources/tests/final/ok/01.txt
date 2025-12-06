@@ -1,0 +1,5 @@
+main
+begin
+    uinteger a;
+    longint b;
+end

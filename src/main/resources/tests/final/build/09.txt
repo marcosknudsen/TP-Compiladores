@@ -1,0 +1,12 @@
+main
+begin
+    uinteger fun f(uinteger x)
+    begin
+        return(x);
+    end;
+
+    longint a;
+    a := 7;
+
+    a := f(a);   */ ERROR: a es longint, x es uinteger /*
+end

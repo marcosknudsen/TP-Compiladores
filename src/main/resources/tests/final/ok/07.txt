@@ -1,0 +1,14 @@
+main
+begin
+    longint fun fa()
+    begin
+        longint fun fb()
+        begin
+            longint x;
+            x := 5;
+            return(x);
+        end;
+
+        return(3);
+    end;
+end

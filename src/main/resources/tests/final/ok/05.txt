@@ -1,0 +1,10 @@
+main
+begin
+    uinteger a;
+    a := 1;
+    do
+    begin
+        a := a + 1;
+    end
+    while (a < 5);
+end
