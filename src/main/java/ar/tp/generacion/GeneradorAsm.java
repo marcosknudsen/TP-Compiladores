@@ -310,7 +310,7 @@ public class GeneradorAsm {
             case "exec" -> genExec(idx, t);
             case "print" -> genPrint(idx, t);
             case "ret"   -> genRet(idx, t);
-            case "<", ">", "<=", ">=", "==", "!=" -> genComparacion(idx, t);
+            case "<", ">", "<=", ">=", "=", "<>", "==", "!=" -> genComparacion(idx, t);
             case "BF" -> genBF(idx, t);
             case "BI" -> genBI(idx, t);
 
@@ -503,10 +503,12 @@ public class GeneradorAsm {
     private void genComparacion(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] ").append(t.operand).append("\n");
 
-        String tipo = tipoDeOperand(t.a);
-        boolean isUInt = isUIntType(tipo);
-        String ra = isUInt ? "ax" : "eax";
-        String rb = isUInt ? "bx" : "ebx";
+        String tipoA = tipoDeOperand(t.a);
+        String tipoB = tipoDeOperand(t.b);
+        boolean isUInt = isUIntType(tipoA) || isUIntType(tipoB);
+
+        String ra = isUInt ? "ax"  : "eax";
+        String rb = isUInt ? "bx"  : "ebx";
 
         cargarEn(ra, t.a);
         cargarEn(rb, t.b);
@@ -520,18 +522,34 @@ public class GeneradorAsm {
         Terceto cond = reglas.get(condIdx);
 
         int dest = ar.tp.parser.Parser.decode(t.b.sval);
-
         String op = cond.operand;
+
+        String tLeft  = tipoDeOperand(cond.a);
+        String tRight = tipoDeOperand(cond.b);
+        boolean isUInt = isUIntType(tLeft) || isUIntType(tRight);
+
         String jmpFalse;
 
-        switch (op) {
-            case "<"  -> jmpFalse = "jge";
-            case ">"  -> jmpFalse = "jle";
-            case "<=" -> jmpFalse = "jg";
-            case ">=" -> jmpFalse = "jl";
-            case "==" -> jmpFalse = "jne";
-            case "!=" -> jmpFalse = "je";
-            default   -> jmpFalse = "je";
+        if (isUInt) {
+            switch (op) {
+                case "<"  -> jmpFalse = "jae";
+                case ">"  -> jmpFalse = "jbe";
+                case "<=" -> jmpFalse = "ja";
+                case ">=" -> jmpFalse = "jb";
+                case "=", "=="  -> jmpFalse = "jne";
+                case "<>", "!=" -> jmpFalse = "je";
+                default         -> jmpFalse = "je";
+            }
+        } else {
+            switch (op) {
+                case "<"  -> jmpFalse = "jge";
+                case ">"  -> jmpFalse = "jle";
+                case "<=" -> jmpFalse = "jg";
+                case ">=" -> jmpFalse = "jl";
+                case "=", "=="  -> jmpFalse = "jne";
+                case "<>", "!=" -> jmpFalse = "je";
+                default         -> jmpFalse = "je";
+            }
         }
 
         code.append("    ")
