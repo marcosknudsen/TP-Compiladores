@@ -497,10 +497,10 @@ public class GeneradorAsm {
         Symbol paramSym = (paramKey != null) ? ts.get(paramKey) : null;
         boolean paramIsUInt = paramSym != null && "uinteger".equalsIgnoreCase(paramSym.tipo);
 
-        String argReg = paramIsUInt ? "ax" : "eax";
-        cargarEn(argReg, t.b);
+        if (paramKey != null && t.b != null && t.b.sval != null && !"-".equals(t.b.sval)) {
+            String argReg = paramIsUInt ? "ax" : "eax";
+            cargarEn(argReg, t.b);
 
-        if (paramKey != null) {
             code.append("    mov ")
                     .append(mangle(paramKey))
                     .append(", ")
