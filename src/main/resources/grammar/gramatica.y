@@ -235,11 +235,25 @@ $$ = new ParserVal(
     | PRINT '(' ')' {System.out.println("ERROR on line "+lex.line+": String expected");}
 ;
 
+marcainiciofunct
+    :
+      {
+          String funName = pilaFun.peek();
+
+          UnidadCodigo nueva = new UnidadCodigo(funName);
+          unidades.put(funName, nueva);
+
+          pilaUnidades.push(unidadActual);
+          unidadActual = nueva;
+      }
+    ;
+
 declaracion: tipodato FUN identificadorfunct '(' parametro ')'
 {
     tiposParFunct.put($3.sval, pilaString.pop());
     tiposRetFunct.put($3.sval, $1.sval);
 }
+marcainiciofunct
 bloquefunct
 {
     ArrayList<String> errores = new ArrayList<>();
@@ -261,32 +275,44 @@ bloquefunct
         guardarVariable($3.sval, new Symbol($1.sval, "Fun"));
     }
     pilaFun.pop();
+
+    if (!pilaUnidades.isEmpty()) {
+        unidadActual = pilaUnidades.pop();
+    }
 }
     | tipodato FUN identificadorfunct '(' ')'
      {
          tiposParFunct.put($3.sval, "");
          tiposRetFunct.put($3.sval, $1.sval);
      }
-     bloquefunct  {
-                      ArrayList<String> errores = new ArrayList<>();
+     marcainiciofunct
+     bloquefunct
+     {
+        ArrayList<String> errores = new ArrayList<>();
 
-                      Symbol sExistente = buscarVariable($3.sval);
-                      if (sExistente != null && sExistente.uso != null && !sExistente.uso.isEmpty()) {
-                          errores.add("declared");
-                      }
+        Symbol sExistente = buscarVariable($3.sval);
 
-                      $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
+        if (sExistente != null && sExistente.uso != null && !sExistente.uso.isEmpty()) {
+            errores.add("declared");
+        }
 
-                      t = reglas.get(pila.peek() - 1);
-                      t.a = new ParserVal($3.sval);
-                      reglas.set(pila.pop() - 1, t);
+        $$ = new ParserVal(crear_terceto("endfun", $3, new ParserVal("-"), errores));
 
-                      colaAmbito.remove(colaAmbito.size() - 1);
-                      if (!errores.contains("declared")){
-                          guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
-                      }
-                      pilaFun.pop();
-                  }
+        t = reglas.get(pila.peek() - 1);
+        t.a = new ParserVal($3.sval);
+        reglas.set(pila.pop() - 1, t);
+
+        colaAmbito.remove(colaAmbito.size() - 1);
+
+        if (!errores.contains("declared")){
+            guardarVariable($3.sval,new Symbol($1.sval,"Fun"));
+        }
+        pilaFun.pop();
+
+        if (!pilaUnidades.isEmpty()) {
+            unidadActual = pilaUnidades.pop();
+        }
+     }
 | tipodato listavariables ';'
 {
   for (String nombre : variables) {
@@ -482,6 +508,20 @@ static HashMap<String,String> tiposParFunct = new HashMap<>();
 static HashMap<String,String> tiposRetFunct = new HashMap<>();
 static Stack<String> pilaFun = new Stack<>();
 
+static class UnidadCodigo {
+    String nombre;
+    ArrayList<Integer> indices;
+
+    UnidadCodigo(String nombre) {
+        this.nombre = nombre;
+        this.indices = new ArrayList<>();
+    }
+}
+
+static java.util.LinkedHashMap<String, UnidadCodigo> unidades = new java.util.LinkedHashMap<>();
+static UnidadCodigo unidadActual = null;
+static Stack<UnidadCodigo> pilaUnidades = new Stack<>();
+
 ar.tp.parser.ParserVal PV;
 
 
@@ -496,6 +536,11 @@ public int runParser() {
     tiposParFunct.clear();
     tiposRetFunct.clear();
     lex.symbols.clear();
+
+    unidades.clear();
+    pilaUnidades.clear();
+    unidadActual = new UnidadCodigo("main");
+    unidades.put("main", unidadActual);
 
     int rc = yyparse();
 
@@ -544,13 +589,25 @@ void yyerror(String s){
 String crear_terceto(String operando, ParserVal a, ParserVal b){
     Terceto t = new Terceto(operando, a, b);
     reglas.add(t);
-    return "["+Integer.toString(reglas.indexOf(t))+"]";
+    int idx = reglas.size() - 1;
+
+    if (unidadActual != null) {
+        unidadActual.indices.add(idx);
+    }
+
+    return "["+ idx +"]";
 }
 
 String crear_terceto(String operando, ParserVal a, ParserVal b, ArrayList<String> errores){
-    Terceto t = new Terceto(operando, a, b,errores);
+    Terceto t = new Terceto(operando, a, b, errores);
     reglas.add(t);
-    return "["+Integer.toString(reglas.indexOf(t))+"]";
+    int idx = reglas.size() - 1;
+
+    if (unidadActual != null) {
+        unidadActual.indices.add(idx);
+    }
+
+    return "["+ idx +"]";
 }
 
 public static int mostrarPila(Stack<Integer> pila){
@@ -577,6 +634,17 @@ public static int mostrarReglas(ArrayList<Terceto> reglas){
     }
     return 0;
 }
+
+public static void mostrarUnidades() {
+    for (UnidadCodigo u : unidades.values()) {
+        System.out.println("UNIDAD: " + u.nombre);
+        for (int idx : u.indices) {
+            System.out.println("[" + idx + "] " + reglas.get(idx));
+        }
+        System.out.println();
+    }
+}
+
 
 public static void mostrarTS(){
     System.out.println("TABLA DE SIMBOLOS");

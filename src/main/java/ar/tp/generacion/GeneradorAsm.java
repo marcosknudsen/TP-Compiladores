@@ -244,11 +244,34 @@ public class GeneradorAsm {
         }
 
         code.append("    ; fin de programa\n");
-        code.append("    invoke ExitProcess, 0\n");
+        code.append("    invoke ExitProcess, 0\n\n");
 
-        code.append("end start\n\n");
+        for (Map.Entry<String, Integer> e : funStart.entrySet()) {
+            String fun = e.getKey();
+            Integer ini = e.getValue();
+            Integer fin = funEnd.get(fun);
+            if (ini == null || fin == null) continue;
+
+            code.append(funLabel(fun)).append(":\n");
+
+            for (int i = ini + 1; i < fin; i++) {
+                Terceto t = reglas.get(i);
+
+                if ("decl".equals(t.operand)) continue;
+
+                if (esLabel[i]) {
+                    code.append(labelName(i)).append(":\n");
+                }
+
+                traducirTerceto(i, t);
+            }
+
+            code.append("\n");
+        }
 
         generarRutinasError();
+
+        code.append("end start\n");
     }
 
 
@@ -278,9 +301,7 @@ public class GeneradorAsm {
 
         cargarEn("eax", t.a);
 
-        code.append("    mov ")
-                .append(tempName(idx))
-                .append(", eax\n");
+        code.append("    ret\n");
     }
 
 
@@ -378,6 +399,7 @@ public class GeneradorAsm {
         String fun = t.a.sval;
 
         cargarEn("eax", t.b);
+
         String paramKey = null;
         for (String key : ts.keySet()) {
             if (key.startsWith(fun + ":")) {
@@ -391,38 +413,13 @@ public class GeneradorAsm {
                     .append(", eax\n");
         }
 
-        Integer ini = funStart.get(fun);
-        Integer fin = funEnd.get(fun);
-        if (ini != null && fin != null) {
-            for (int j = ini + 1; j < fin; j++) {
-                Terceto cuerpo = reglas.get(j);
+        code.append("    call ")
+                .append(funLabel(fun))
+                .append("\n");
 
-                if ("decl".equals(cuerpo.operand)) continue;
-
-                if (esLabel[j]) {
-                    code.append(labelName(j)).append(":\n");
-                }
-
-                traducirTerceto(j, cuerpo);
-            }
-        }
-
-        int retIdx = -1;
-        for (int j = ini + 1; j < fin; j++) {
-            Terceto cuerpo = reglas.get(j);
-            if ("ret".equals(cuerpo.operand)) {
-                retIdx = j;
-                break;
-            }
-        }
-        if (retIdx != -1) {
-            code.append("    mov eax, ")
-                    .append(tempName(retIdx))
-                    .append("\n");
-            code.append("    mov ")
-                    .append(tempName(idx))
-                    .append(", eax\n");
-        }
+        code.append("    mov ")
+                .append(tempName(idx))
+                .append(", eax\n");
     }
 
     private String labelName(int idx) {
@@ -507,4 +504,7 @@ public class GeneradorAsm {
         code.append("    call MessageBoxA\n");
     }
 
+    private String funLabel(String fun) {
+        return "fun_" + fun;
+    }
 }

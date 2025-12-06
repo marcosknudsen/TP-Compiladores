@@ -8,7 +8,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import static ar.tp.parser.Parser.mostrarPila;
-import static ar.tp.parser.Parser.mostrarReglas;
+import static ar.tp.parser.Parser.mostrarUnidades;
 import static ar.tp.parser.Parser.mostrarTS;
 
 public class Run {
@@ -24,7 +24,7 @@ public class Run {
         Parser p = new Parser(false);
         int rc = p.runParser();
 
-        mostrarReglas(Parser.reglas);
+        mostrarUnidades();
         System.out.println();
 
         mostrarTS();
