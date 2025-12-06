@@ -279,6 +279,10 @@ public class GeneradorAsm {
             code.append(funLabel(fun)).append(":\n");
 
             for (int i = ini + 1; i < fin; i++) {
+                if (perteneceAOtraFuncion(fun, i)) {
+                    continue;
+                }
+
                 Terceto t = reglas.get(i);
 
                 if ("decl".equals(t.operand)) continue;
@@ -640,5 +644,36 @@ public class GeneradorAsm {
 
     private String funLabel(String fun) {
         return "fun_" + fun;
+    }
+
+    private boolean perteneceAOtraFuncion(String funActual, int idx) {
+        Integer iniActual = funStart.get(funActual);
+        Integer finActual = funEnd.get(funActual);
+        if (iniActual == null || finActual == null) {
+            return false;
+        }
+
+        for (Map.Entry<String, Integer> e : funStart.entrySet()) {
+            String f = e.getKey();
+            if (f.equals(funActual)) {
+                continue;
+            }
+
+            Integer ini = e.getValue();
+            Integer fin = funEnd.get(f);
+            if (ini == null || fin == null) {
+                continue;
+            }
+
+            boolean funcionInternaDeActual = ini > iniActual && fin < finActual;
+            if (!funcionInternaDeActual) {
+                continue;
+            }
+
+            if (idx > ini && idx < fin) {
+                return true;
+            }
+        }
+        return false;
     }
 }
