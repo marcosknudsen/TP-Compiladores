@@ -244,7 +244,7 @@ public class GeneradorAsm {
         }
 
         code.append("    ; fin de programa\n");
-        code.append("invoke ExitProcess, 0\n");
+        code.append("    invoke ExitProcess, 0\n");
 
         code.append("end start\n\n");
 
