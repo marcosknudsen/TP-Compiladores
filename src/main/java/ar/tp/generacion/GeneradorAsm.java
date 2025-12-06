@@ -117,6 +117,10 @@ public class GeneradorAsm {
         return s != null && "cte".equalsIgnoreCase(s.uso);
     }
 
+    private boolean isUIntType(String tipo) {
+        return tipo != null && tipo.equalsIgnoreCase("uinteger");
+    }
+
     private boolean produceValor(Terceto t) {
         if (t == null) return false;
         return switch (t.operand) {
@@ -174,6 +178,22 @@ public class GeneradorAsm {
                 .append("\n");
     }
 
+    private String tipoDeOperand(ar.tp.parser.ParserVal pv) {
+        if (pv == null || pv.sval == null) return null;
+        String s = pv.sval;
+
+        if (s.startsWith("[") && s.endsWith("]")) {
+            int idx = ar.tp.parser.Parser.decode(s);
+            if (idx >= 0 && idx < reglas.size()) {
+                Terceto tt = reglas.get(idx);
+                return tt.tipo;
+            }
+        }
+
+        Symbol sym = ts.get(s);
+        return sym != null ? sym.tipo : null;
+    }
+
     private void generarData() {
 
         data.append(".386\n");
@@ -195,7 +215,9 @@ public class GeneradorAsm {
             if ((esVar(s) || esParametro(s)) && !"main".equalsIgnoreCase(name)) {
                 data.append("    ")
                         .append(mangle(name))
-                        .append(" dd 0\n");
+                        .append(" ")
+                        .append(isUIntType(s.tipo) ? "dw 0" : "dd 0")
+                        .append("\n");
             }
         }
 
@@ -204,7 +226,9 @@ public class GeneradorAsm {
             if (produceValor(t)) {
                 data.append("    ")
                         .append(tempName(i))
-                        .append(" dd 0\n");
+                        .append(" ")
+                        .append(isUIntType(t.tipo) ? "dw 0" : "dd 0")
+                        .append("\n");
             }
         }
 
@@ -336,60 +360,97 @@ public class GeneradorAsm {
 
     private void genAsignacion(int idx, Terceto t) {
         String lhs = t.a.sval;
-        code.append("    ; [").append(idx).append("] :=\n");
-        cargarEn("eax", t.b);
+        Symbol s = ts.get(lhs);
+        boolean isUInt = s != null && isUIntType(s.tipo);
+        String reg = isUInt ? "ax" : "eax";
 
-        code.append("    mov ").append(mangle(lhs)).append(", eax\n");
+        code.append("    ; [").append(idx).append("] :=\n");
+        cargarEn(reg, t.b);
+
+        code.append("    mov ").append(mangle(lhs)).append(", ").append(reg).append("\n");
     }
 
     private void genSuma(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] +\n");
-        cargarEn("eax", t.a);
-        cargarEn("ebx", t.b);
-        code.append("    add eax, ebx\n");
-        code.append("    mov ").append(tempName(idx)).append(", eax\n");
+        boolean isUInt = isUIntType(t.tipo);
+        String ra = isUInt ? "ax" : "eax";
+        String rb = isUInt ? "bx" : "ebx";
+
+        cargarEn(ra, t.a);
+        cargarEn(rb, t.b);
+        code.append("    add ").append(ra).append(", ").append(rb).append("\n");
+        code.append("    mov ").append(tempName(idx)).append(", ").append(ra).append("\n");
     }
 
     private void genResta(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] -\n");
-        cargarEn("eax", t.a);
-        cargarEn("ebx", t.b);
-        code.append("    sub eax, ebx\n");
+        boolean isUInt = isUIntType(t.tipo);
+        String ra = isUInt ? "ax" : "eax";
+        String rb = isUInt ? "bx" : "ebx";
 
-        if ("uinteger".equalsIgnoreCase(t.tipo)) {
+        cargarEn(ra, t.a);
+        cargarEn(rb, t.b);
+        code.append("    sub ").append(ra).append(", ").append(rb).append("\n");
+
+        if (isUInt) {
             code.append("    js _ERR_NEG_UINT\n");
         }
 
-        code.append("    mov ").append(tempName(idx)).append(", eax\n");
+        code.append("    mov ").append(tempName(idx)).append(", ").append(ra).append("\n");
     }
 
     private void genProducto(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] *\n");
-        cargarEn("eax", t.a);
-        cargarEn("ebx", t.b);
-        code.append("    imul ebx\n");
-        code.append("    jo _ERR_OVERFLOW_MUL\n");
-        code.append("    mov ").append(tempName(idx)).append(", eax\n");
+        boolean isUInt = isUIntType(t.tipo);
+
+        if (isUInt) {
+            cargarEn("ax", t.a);
+            cargarEn("bx", t.b);
+            code.append("    mul bx\n");
+            code.append("    cmp dx, 0\n");
+            code.append("    jne _ERR_OVERFLOW_MUL\n");
+            code.append("    mov ").append(tempName(idx)).append(", ax\n");
+        } else {
+            cargarEn("eax", t.a);
+            cargarEn("ebx", t.b);
+            code.append("    imul ebx\n");
+            code.append("    jo _ERR_OVERFLOW_MUL\n");
+            code.append("    mov ").append(tempName(idx)).append(", eax\n");
+        }
     }
 
     private void genDivision(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] /\n");
+        boolean isUInt = isUIntType(t.tipo);
 
-        cargarEn("eax", t.b);
-        code.append("    cmp eax, 0\n");
-        code.append("    je _ERR_DIV_ZERO\n");
+        if (isUInt) {
+            cargarEn("ax", t.b);
+            code.append("    cmp ax, 0\n");
+            code.append("    je _ERR_DIV_ZERO\n");
 
-        cargarEn("eax", t.a);
-        code.append("    cdq\n");
-        cargarEn("ebx", t.b);
-        code.append("    idiv ebx\n");
+            cargarEn("ax", t.a);
+            code.append("    xor dx, dx\n");
+            cargarEn("bx", t.b);
+            code.append("    div bx\n");
+            code.append("    mov ").append(tempName(idx)).append(", ax\n");
+        } else {
+            cargarEn("eax", t.b);
+            code.append("    cmp eax, 0\n");
+            code.append("    je _ERR_DIV_ZERO\n");
 
-        code.append("    mov ").append(tempName(idx)).append(", eax\n");
+            cargarEn("eax", t.a);
+            code.append("    cdq\n");
+            cargarEn("ebx", t.b);
+            code.append("    idiv ebx\n");
+
+            code.append("    mov ").append(tempName(idx)).append(", eax\n");
+        }
     }
 
     private void genUitol(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] uitol\n");
-        cargarEn("eax", t.a);
+        cargarEn("ax", t.a);
+        code.append("    movzx eax, ax\n");
         code.append("    mov ").append(tempName(idx)).append(", eax\n");
     }
 
@@ -398,8 +459,6 @@ public class GeneradorAsm {
 
         String fun = t.a.sval;
 
-        cargarEn("eax", t.b);
-
         String paramKey = null;
         for (String key : ts.keySet()) {
             if (key.startsWith(fun + ":")) {
@@ -407,19 +466,34 @@ public class GeneradorAsm {
                 break;
             }
         }
+
+        Symbol paramSym = (paramKey != null) ? ts.get(paramKey) : null;
+        boolean paramIsUInt = paramSym != null && "uinteger".equalsIgnoreCase(paramSym.tipo);
+
+        String argReg = paramIsUInt ? "ax" : "eax";
+        cargarEn(argReg, t.b);
+
         if (paramKey != null) {
             code.append("    mov ")
                     .append(mangle(paramKey))
-                    .append(", eax\n");
+                    .append(", ")
+                    .append(argReg)
+                    .append("\n");
         }
 
         code.append("    call ")
                 .append(funLabel(fun))
                 .append("\n");
 
+        Symbol funSym = ts.get(fun);
+        boolean retIsUInt = funSym != null && "uinteger".equalsIgnoreCase(funSym.tipo);
+        String retReg = retIsUInt ? "ax" : "eax";
+
         code.append("    mov ")
                 .append(tempName(idx))
-                .append(", eax\n");
+                .append(", ")
+                .append(retReg)
+                .append("\n");
     }
 
     private String labelName(int idx) {
@@ -428,9 +502,15 @@ public class GeneradorAsm {
 
     private void genComparacion(int idx, Terceto t) {
         code.append("    ; [").append(idx).append("] ").append(t.operand).append("\n");
-        cargarEn("eax", t.a);
-        cargarEn("ebx", t.b);
-        code.append("    cmp eax, ebx\n");
+
+        String tipo = tipoDeOperand(t.a);
+        boolean isUInt = isUIntType(tipo);
+        String ra = isUInt ? "ax" : "eax";
+        String rb = isUInt ? "bx" : "ebx";
+
+        cargarEn(ra, t.a);
+        cargarEn(rb, t.b);
+        code.append("    cmp ").append(ra).append(", ").append(rb).append("\n");
     }
 
     private void genBF(int idx, Terceto t) {
@@ -473,7 +553,6 @@ public class GeneradorAsm {
         }
 
         if (target == null) {
-            // System.out.println("WARN: BI sin destino válido en [" + idx + "]");
             return;
         }
 
